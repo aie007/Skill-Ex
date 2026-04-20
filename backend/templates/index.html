@@ -4,36 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Random App</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-2hxZz7GZgJ95FuOp3rzaiExYVfvUBw5avG2U2UROF0xzH7w6Un+LD228qGygOVLj" crossorigin="anonymous">
+    <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-2hxZz7GZgJ95FuOp3rzaiExYVfvUBw5avG2U2UROF0xzH7w6Un+LD228qGygOVLj" crossorigin="anonymous"> -->
     <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}">
 </head>
 <body>
-      <h1>what on earth is this????</h1>
-    <h1>{{ message }}</h1>
-    <div class="collapse show bg-dark text-white text-center py-2" id="cookieBannerExample">
-        <div class="container">
-            <div class="row">
-            <div class="col-12 col-md-7 m-auto">
-                <div class="row align-items-center">
-                <div class="col">
-                    We use cookies to serve personalized content. By clicking "Accept", you consent to our use of cookies. Some features may be unavailable without your consent.  
-                </div>
-                </div>
-            </div>
-            <div class="col-12 col-md-5 m-auto">
-                <button type="button" class="btn btn-sm btn-secondary me-2" data-bs-toggle="collapse" data-bs-target="#cookieBannerExample"
-                aria-expanded="true" aria-controls="cookieBannerExample">
-                Accept <span class="fa fa-angle-right ms-2"></span>
-                </button>
-                <button type="button" class="btn btn-sm btn-secondary" data-bs-toggle="collapse" data-bs-target="#cookieBannerExample"
-                aria-expanded="true" aria-controls="cookieBannerExample">
-                Decline <span class="fa fa-angle-right ms-2"></span>
-                </button>
-            </div>
-            </div>
+    <h1>what on earth is this????</h1>
+    {{ message }}
+    <div id="cookie-banner" {% if show_banner %} style="display: flex;" {% else %} style="display: none;" {% endif %}>
+        <div class="banner-text">
+            We use cookies to serve personalized content. By clicking "Accept", you consent to our use of cookies. 
+            Some features may be unavailable without your consent. You can always modify your consent from <a href="" onclick="showCookiesPopup()">cookies settings</a>.
+        </div>
+        <div class="banner-buttons">
+            <button onclick="sendConsent('reject', 'cookie-banner')" class="btn btn-reject" id="reject-btn">Reject</button>
+            <button onclick="sendConsent('accept', 'cookie-banner')" class="btn btn-accept" id="accept-btn">Accept</button>
         </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js" integrity="sha384-6/jqoEU23nN+WXNdoB26HoFwyFJ4K1bVWC3aiHxELGQSFMymMv2XSRMyRtVvWXHE" crossorigin="anonymous"></script>
+    <!-- <div id="cookie-popup" style="display: none;">
+        <h5>Manage Cookies Consent</h5>
+        <div class="banner-text">
+            We use cookies to serve personalized content. By clicking "Accept", you consent to our use of cookies. 
+            Some features may be unavailable without your consent. You can always modify your consent from <a href="">cookies settings</a>.
+        </div>
+        <div class="banner-buttons">
+            <button onclick="sendConsent('reject', 'cookie-popup')" class="btn btn-reject" id="reject-btn-2">Reject</button>
+            <button onclick="sendConsent('accept', 'cookie-popup')" class="btn btn-accept" id="accept-btn-2">Accept</button>
+        </div>
+    </div> -->
+    <script>
+        async function sendConsent(choice, parentElementId) {
+            document.getElementById(parentElementId).style.display = 'none';
+            await fetch(`/set-consent?choice=${choice}`, { method: 'POST' });
+        }
+        function showCookiesPopup() {
+            document.getElementById('cookie-popup').style.display = 'flex';
+        }
+    </script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js" integrity="sha384-6/jqoEU23nN+WXNdoB26HoFwyFJ4K1bVWC3aiHxELGQSFMymMv2XSRMyRtVvWXHE" crossorigin="anonymous"></script> -->
 </body>
 </html>
