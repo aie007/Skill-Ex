@@ -23,17 +23,29 @@ templates = Jinja2Templates(directory="backend/templates")
 # Dependency Injection
 def get_repository():
     repo = SQLiteRepository()
-    repo.initialize()
+    db_path = settings.database.name
     
-    # Check if DB is empty and sync from S3 if it is
-    if repo.get_all_jobs().empty:
+    import os
+    # If DB file doesn't exist or is empty, try to restore or sync
+    if not os.path.exists(db_path) or repo.get_all_jobs().empty:
         pipeline = DataPipeline(repo)
-        pipeline.sync_from_s3()
+        # 1. Try to restore from DB backup first
+        restored = pipeline.restore_db_from_s3()
         
+        # 2. If restore failed and it's still empty, sync from raw JSONs
+        if not restored and repo.get_all_jobs().empty:
+            pipeline.sync_from_s3()
+            
+    repo.initialize()
     return repo
 
 def get_recommender(repo=Depends(get_repository)):
-    return JobRecommender(repo)
+    recommender = JobRecommender(repo)
+    # Auto-train if artifacts are missing
+    if not recommender.load_artifacts():
+        print("Model artifacts not found. Training model...")
+        recommender.train()
+    return recommender
 
 def get_trend_analyzer():
     return TrendAnalyzer()

@@ -11,6 +11,19 @@ class DataPipeline:
         self.skill_extractor = RegexSkillExtractor()
         self.exp_extractor = ExperienceExtractor()
 
+    def restore_db_from_s3(self):
+        """Attempts to download the DB backup from S3."""
+        print("Attempting to restore DB from S3 backup...")
+        try:
+            backup_bucket = settings.aws.processed_bucket
+            backup_key = "db_backups/job_market.db"
+            self.storage.download_file(backup_bucket, backup_key, settings.database.name)
+            print("DB restored successfully from S3.")
+            return True
+        except Exception as e:
+            print(f"No DB backup found or failed to download: {e}")
+            return False
+
     def sync_from_s3(self):
         """Fetches all raw JSONs from S3, processes them, and saves to DB."""
         print("Starting sync from S3...")

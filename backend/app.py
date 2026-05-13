@@ -17,10 +17,14 @@ with tabs[0]:
         with st.spinner("Fetching market data..."):
             response = requests.get(f"{API_URL}/trends?freq={res}")
             if response.status_code == 200:
-                st.session_state.trend_df = pd.DataFrame(response.json()).set_index('posted_at')
-                # Fetch Momentum
-                mom_resp = requests.get(f"{API_URL}/momentum")
-                st.session_state.momentum = pd.Series(mom_resp.json()).sort_values(ascending=False)
+                data = response.json()
+                if data:
+                    st.session_state.trend_df = pd.DataFrame(data).set_index('posted_at')
+                    # Fetch Momentum
+                    mom_resp = requests.get(f"{API_URL}/momentum")
+                    st.session_state.momentum = pd.Series(mom_resp.json()).sort_values(ascending=False)
+                else:
+                    st.warning("No trend data available in the database yet.")
             else:
                 st.error("Failed to fetch data from API")
 
@@ -76,5 +80,10 @@ with tabs[1]:
                 for rec in data['recommendations']:
                     score_pct = int(rec['match_score'] * 100)
                     st.metric(label=f"{rec['title']} @ {rec['company']}", value=f"{score_pct}% Match")
+                    if rec['missing_skills']:
+                        st.write(f"**Skills to acquire:** {', '.join(rec['missing_skills'])}")
+                    else:
+                        st.success("Perfect skill match!")
+                    st.divider()
             else:
                 st.error("API Connection Error")

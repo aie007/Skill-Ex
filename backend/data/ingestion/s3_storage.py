@@ -23,6 +23,9 @@ class S3StorageProvider:
         response = self.s3.list_objects_v2(Bucket=bucket, Prefix=prefix)
         return [obj['Key'] for obj in response.get('Contents', []) if obj['Key'].endswith('.json')]
 
+    def download_file(self, bucket: str, key: str, local_path: str):
+        self.s3.download_file(bucket, key, local_path)
+
     def backup_file(self, bucket: str, file_path: str, remote_key: str):
         with open(file_path, 'rb') as f:
             self.s3.put_object(Bucket=bucket, Key=remote_key, Body=f)
