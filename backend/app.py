@@ -1,43 +1,80 @@
 import streamlit as st
-from trend_engine.engine import TrendEngine
+import requests
+import pandas as pd
 import plotly.express as px
 
-st.set_page_config(page_title="Job Skill Trend Radar", layout="wide")
+API_URL = "http://localhost:8000"
 
-# Initialize Engine
-engine = TrendEngine("api_ingestion_job/job_market.db")
+st.set_page_config(page_title="AI Career Radar", layout="wide")
+tabs = st.tabs([" Market Trends", "Resume Matcher"])
 
-st.title(" Tech Skill Trend Engine")
-st.markdown("---")
 
-try:
-    raw_data = engine.fetch_data()
-
-    st.sidebar.header("Settings")
-    time_res = st.sidebar.selectbox("Time Resolution", ["D", "W", "M"], index=1)
-    top_n = st.sidebar.slider("Show Top N Skills", 5, 20, 10)
+with tabs[0]:
+    st.header("Global Tech Skill Demand")
+    res = st.sidebar.selectbox("Resolution", ["D", "W", "M"], index=1)
     
-    trend_data = engine.get_timeseries_trends(raw_data, freq=time_res)
-    momentum = engine.calculate_momentum(trend_data)
+    if st.button("Refresh Trends"):
+        with st.spinner("Fetching market data..."):
+            response = requests.get(f"{API_URL}/trends?freq={res}")
+            if response.status_code == 200:
+                st.session_state.trend_df = pd.DataFrame(response.json()).set_index('posted_at')
+                # Fetch Momentum
+                mom_resp = requests.get(f"{API_URL}/momentum")
+                st.session_state.momentum = pd.Series(mom_resp.json()).sort_values(ascending=False)
+            else:
+                st.error("Failed to fetch data from API")
 
-    col1, col2 = st.columns([2, 1])
-
-    with col1:
-        st.subheader("Skill Demand Over Time (%)")
-        selected_skills = st.multiselect("Filter Skills", trend_data.columns.tolist(), default=trend_data.columns[:5].tolist())
+    if "trend_df" in st.session_state:
+        trend_df = st.session_state.trend_df
+        all_skills = trend_df.columns.tolist()
         
-        if selected_skills:
-            fig = px.line(trend_data[selected_skills], labels={"value": "Market Share %", "posted_at": "Date"})
-            st.plotly_chart(fig, width='stretch')
+        col1, col2 = st.columns([4, 1])
+        with col1:
+            selected = st.multiselect("Select Skills to Plot", all_skills, default=all_skills[:5])
+        with col2:
+            if st.button("Clear Cache"):
+                del st.session_state.trend_df
+                st.rerun()
 
-    with col2:
-        st.subheader("Skill Momentum")
-        st.caption("Growth rate compared to previous period")
-        if not momentum.empty:
-            st.dataframe(momentum.head(top_n).to_frame("Growth Score"), width='stretch')
-        else:
-            st.info("Not enough data points for momentum yet.")
+        if len(selected) > 40:
+            st.error("Too many skills selected. Plotting more than 40 skills is disabled to prevent system crash. Please reduce your selection.")
+        elif selected:
+            try:
+                fig = px.line(
+                    trend_df[selected], 
+                    labels={"value": "Market Share %", "posted_at": "Date"},
+                    title="Skill Penetration Over Time"
+                )
+                st.plotly_chart(fig, use_container_width=True)
+            except Exception as e:
+                st.error(f"Error rendering chart: {e}")
+        
+        st.subheader("Skill Momentum (Fastest Growing)")
+        st.dataframe(st.session_state.momentum.head(10).to_frame("Growth Score"))
 
-except Exception as e:
-    st.error(f"Error loading database: {e}")
-    st.info("Make sure your SQLite database path is correct and contains the jobs/skills tables.")
+
+
+
+
+with tabs[1]:
+    st.header("Personalized Job Recommendations")
+    uploaded_file = st.file_uploader("Upload Masked Resume (PDF)", type="pdf")
+    
+    if uploaded_file:
+        with st.spinner("Processing via AI API..."):
+            files = {"file": uploaded_file}
+            response = requests.post(f"{API_URL}/recommend", files=files)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                with st.expander("View Masked Resume (PII Redacted)"):
+                    st.text(data['masked_resume'])
+                
+                st.info(f"**Extracted Skills:** {', '.join(data['extracted_skills'])}")
+                
+                for rec in data['recommendations']:
+                    score_pct = int(rec['match_score'] * 100)
+                    st.metric(label=f"{rec['title']} @ {rec['company']}", value=f"{score_pct}% Match")
+            else:
+                st.error("API Connection Error")

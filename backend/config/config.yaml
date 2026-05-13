@@ -10,7 +10,7 @@ aws:
   processed_bucket: "amzn-s3-processed-bucket-skillex"
 
 database:
-  name: "job_market.db"
+  name: "backend/data/job_market.db"
 
 # Critical for the ExperienceExtractor class
 experience_levels:

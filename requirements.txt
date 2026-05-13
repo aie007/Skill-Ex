@@ -26,3 +26,4 @@ pip install spacy-skillner
 python -m spacy download en_core_web_sm
 streamlit
 plotly
+mlflow

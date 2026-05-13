@@ -2,17 +2,49 @@ from fastapi import FastAPI, Request, Response, Query, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from typing import Optional
+from typing import Optional, List, Dict, Any
+import pdfplumber
+import io
 
-app = FastAPI()
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+from backend.data.repository.database_repository import SQLiteRepository
+from backend.data.pipeline import DataPipeline
+from backend.models.recommender.job_recommender import JobRecommender
+from backend.models.trend.trend_analyzer import TrendAnalyzer
+from backend.utils.extractors import RegexSkillExtractor
+from backend.utils.pii_masker import PIIMasker
+from backend.config.settings import settings
+
+app = FastAPI(title="Skill-Ex AI Core API")
+
+# Mount static files and templates (as per original main.py)
+app.mount("/static", StaticFiles(directory="backend/static"), name="static")
+templates = Jinja2Templates(directory="backend/templates")
+
+# Dependency Injection
+def get_repository():
+    repo = SQLiteRepository()
+    repo.initialize()
+    
+    # Check if DB is empty and sync from S3 if it is
+    if repo.get_all_jobs().empty:
+        pipeline = DataPipeline(repo)
+        pipeline.sync_from_s3()
+        
+    return repo
+
+def get_recommender(repo=Depends(get_repository)):
+    return JobRecommender(repo)
+
+def get_trend_analyzer():
+    return TrendAnalyzer()
+
+def get_extractor():
+    return RegexSkillExtractor()
+
+# --- Cookie Consent Logic (from original main.py) ---
 
 async def verify_consent(consent_cookie: Optional[str] = Cookie(None, alias="user_consent")):
-    """
-    Dependency that checks if the 'user_consent' cookie exists and is 'accepted'.
-    """
-    if consent_cookie != "accepted":
+    if consent_cookie != "granted":
         raise HTTPException(
             status_code=403, 
             detail="Consent required. Please accept cookies to use this feature."
@@ -22,46 +54,88 @@ async def verify_consent(consent_cookie: Optional[str] = Cookie(None, alias="use
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     consent = request.cookies.get("user_consent")
-    print(consent)
     show_banner = True if not consent else False
-
     return templates.TemplateResponse(
-        request = request, 
-        name = "index.html", 
-        context = {"message": "viola!", "show_banner": show_banner}
+        request=request, 
+        name="index.html", 
+        context={"message": "viola!", "show_banner": show_banner}
     )
-
-@app.post("/get-recommendations")
-async def upload_and_recommend(file: UploadFile = File(...), consent: bool = Depends(verify_consent)):
-    """
-    This endpoint only runs if verify_consent passes.
-    """
-    # Logic to process the file and generate recommendations
-    return {
-        "filename": file.filename,
-        "recommendations": ["Item A", "Item B", "Item C"],
-        "status": "Success"
-    }
 
 @app.post("/set-consent")
 async def set_cookie_consent(response: Response, choice: str = Query(...)):
     if choice == "accept":
-        # Set a long-term cookie for accepted consent
         response.set_cookie(
             key="user_consent",
             value="granted",
-            max_age=31536000,  # 1 year
+            max_age=31536000,
             httponly=True,
             samesite="lax"
         )
         return {"status": "accepted"}
-    
-    # no cookie should be set as consent was denied
     response.delete_cookie(key="user_consent")
-    # Set a session cookie or a 'denied' flag
-    # response.set_cookie(
-    #     key="user_consent",
-    #     value="denied",
-    #     httponly=True
-    # )
     return {"status": "rejected"}
+
+# --- Consolidated Core API Endpoints ---
+
+@app.post("/recommend")
+async def recommend_from_pdf(
+    file: UploadFile = File(...), 
+    recommender=Depends(get_recommender),
+    extractor=Depends(get_extractor)
+):
+    try:
+        content = await file.read()
+        with pdfplumber.open(io.BytesIO(content)) as pdf:
+            resume_text = " ".join([p.extract_text() for p in pdf.pages if p.extract_text()])
+        
+        # Apply PII Masking
+        masked_resume = PIIMasker.mask(resume_text)
+        
+        masked_skills = extractor.extract(masked_resume)
+        if not masked_skills:
+            return {
+                "masked_resume": masked_resume,
+                "extracted_skills": [], 
+                "recommendations": [], 
+                "message": "No recognized skills found"
+            }
+
+        recommendations, gaps = recommender.recommend(", ".join(masked_skills))
+        
+        return {
+            "masked_resume": masked_resume,
+            "extracted_skills": masked_skills, 
+            "recommendations": recommendations,
+            "skill_gaps": gaps
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/trends")
+async def get_market_trends(
+    freq: str = 'W', 
+    repo=Depends(get_repository),
+    analyzer=Depends(get_trend_analyzer)
+):
+    try:
+        df = repo.get_trend_data()
+        if df.empty: return {}
+        trends = analyzer.get_timeseries_trends(df, freq=freq)
+        return trends.reset_index().to_dict(orient="list")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Trend calculation error: {str(e)}")
+
+@app.get("/momentum")
+async def get_skill_momentum(
+    window: int = 3, 
+    repo=Depends(get_repository),
+    analyzer=Depends(get_trend_analyzer)
+):
+    try:
+        df = repo.get_trend_data()
+        if df.empty: return {}
+        trends = analyzer.get_timeseries_trends(df)
+        momentum = analyzer.calculate_momentum(trends, window=window)
+        return momentum.to_dict()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Momentum calculation error: {str(e)}")

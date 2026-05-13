@@ -1,0 +1,54 @@
+from typing import List, Dict, Any
+from backend.data.ingestion.s3_storage import S3StorageProvider
+from backend.data.repository.database_repository import SQLiteRepository
+from backend.utils.extractors import RegexSkillExtractor, ExperienceExtractor
+from backend.config.settings import settings
+
+class DataPipeline:
+    def __init__(self, repo: SQLiteRepository = None):
+        self.repo = repo or SQLiteRepository()
+        self.storage = S3StorageProvider()
+        self.skill_extractor = RegexSkillExtractor()
+        self.exp_extractor = ExperienceExtractor()
+
+    def sync_from_s3(self):
+        """Fetches all raw JSONs from S3, processes them, and saves to DB."""
+        print("Starting sync from S3...")
+        try:
+            raw_bucket = settings.aws.raw_bucket
+            keys = self.storage.list_objects(raw_bucket, prefix="raw/")
+            
+            if not keys:
+                print("No raw data found in S3.")
+                return
+
+            for key in keys:
+                print(f"Processing {key}...")
+                raw_data = self.storage.fetch_json(raw_bucket, key)
+                
+                # The structure might vary, but original code looked for 'data' key
+                jobs_list = raw_data.get('data', []) if isinstance(raw_data, dict) else raw_data
+                
+                processed = []
+                for job in jobs_list:
+                    desc = job.get("job_description", "")
+                    title = job.get("job_title", "")
+                    
+                    skills = self.skill_extractor.extract(desc)
+                    exp_level = self.exp_extractor.extract(title, desc)
+                    
+                    processed.append({
+                        "title": title,
+                        "company": job.get("employer_name"),
+                        "skills": skills,
+                        "experience": exp_level,
+                        "date": job.get("job_posted_at_datetime_utc"),
+                        "source_id": job.get("job_id"),
+                        "raw_ref": key
+                    })
+                
+                self.repo.save_jobs(processed)
+            print("Sync complete.")
+        except Exception as e:
+            print(f"Failed to sync from S3: {e}")
+
