@@ -23,20 +23,26 @@ templates = Jinja2Templates(directory="backend/templates")
 # Dependency Injection
 def get_repository():
     repo = SQLiteRepository()
-    db_path = settings.database.name
+    repo.initialize() # Ensure tables exist first
     
+    db_path = settings.database.name
     import os
-    # If DB file doesn't exist or is empty, try to restore or sync
-    if not os.path.exists(db_path) or repo.get_all_jobs().empty:
+    
+    # Check if empty
+    try:
+        is_empty = repo.get_all_jobs().empty
+    except Exception:
+        is_empty = True
+        
+    if not os.path.exists(db_path) or is_empty:
         pipeline = DataPipeline(repo)
         # 1. Try to restore from DB backup first
         restored = pipeline.restore_db_from_s3()
         
         # 2. If restore failed and it's still empty, sync from raw JSONs
-        if not restored and repo.get_all_jobs().empty:
+        if not restored and is_empty:
             pipeline.sync_from_s3()
             
-    repo.initialize()
     return repo
 
 def get_recommender(repo=Depends(get_repository)):
