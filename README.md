@@ -5,6 +5,72 @@ Skill-Ex is an MLOps-ready platform for skill extraction, job recommendation, an
 ## Project Structure
 
 ```
+microservices/
+├── ingestion/          # API Fetching & S3/SQLite Syncing
+├── model_training/     # ML Training & MLflow Logging
+├── recommendation_api/ # FastAPI Inference Service
+└── dashboard/          # Streamlit UI
+shared/                 # Shared logic (Interfaces, Config, Utils)
+airflow-jobs/           # Orchestration (DAGs, Config)
+```
+
+## Running the Microservices
+
+Each service can be run independently from the project root:
+
+### 1. Recommendation API (FastAPI)
+```bash
+export PYTHONPATH=$PYTHONPATH:.
+uvicorn microservices.recommendation_api.main:app --reload --port 8000
+```
+- **UI**: [http://localhost:8000](http://localhost:8000)
+
+### 2. Dashboard (Streamlit)
+```bash
+streamlit run microservices/dashboard/app.py
+```
+- **UI**: [http://localhost:8501](http://localhost:8501)
+
+### 3. Ingestion & Training (Manual)
+You can run these via the global orchestrator or directly:
+```bash
+# Via Orchestrator
+python scripts/pipeline_tasks.py fetch-and-sync
+python scripts/pipeline_tasks.py train
+
+# Directly
+python microservices.ingestion.run
+python microservices.model_training.train
+```
+
+## MLOps Pipeline (DVC)
+
+We use DVC to manage data versioning and pipeline execution across microservices.
+
+1. **Pull Data**: `dvc pull`
+2. **Run Pipeline**: `dvc repro` (Runs Ingestion -> Training)
+3. **Track Changes**: `dvc push`
+
+## Workflow Orchestration (Airflow)
+
+A weekly automated pipeline is configured in `airflow-jobs/` to keep the system up to date.
+
+### Option A: Running with Docker (Recommended)
+```bash
+cd airflow-jobs
+docker-compose up -d
+```
+The UI will be available at [http://localhost:8085](http://localhost:8085).
+
+### Option B: Running with Virtual Environment
+1. **Set Airflow Home**: `export AIRFLOW_HOME=$(pwd)/airflow-jobs`
+2. **Set Dags Folder**: `export AIRFLOW__CORE__DAGS_FOLDER=$(pwd)/airflow-jobs/dags`
+3. **Run**: `./venv/bin/airflow standalone`
+
+## MLflow & Experiment Tracking
+Run `mlflow ui --port 5000` to view metrics and artifacts at [http://localhost:5000](http://localhost:5000).
+
+```
 backend/
 ├── main.py             # FastAPI application
 ├── core/               # Shared interfaces (SOLID)

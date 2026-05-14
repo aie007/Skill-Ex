@@ -8,8 +8,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import mlflow
 import mlflow.sklearn
-from backend.core.interfaces import IRecommender, IDataRepository
-from backend.config.settings import settings
+from shared.core.interfaces import IRecommender, IDataRepository
+from shared.config.settings import settings
 
 class JobRecommender(IRecommender):
     def __init__(self, repository: IDataRepository, artifact_path: str = "model_artifacts.pkl"):
@@ -22,7 +22,7 @@ class JobRecommender(IRecommender):
 
     def train(self):
         """Trains the model and logs to MLflow."""
-        mlflow.set_tracking_uri("file:///./mlruns")
+        mlflow.set_tracking_uri("file:./mlruns")
         with mlflow.start_run(run_name="Job_Recommender_Training"):
             df = self.repository.get_all_jobs()
             if df.empty:
