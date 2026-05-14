@@ -5,7 +5,7 @@ from fastapi.templating import Jinja2Templates
 from typing import Optional, List, Dict, Any
 import pdfplumber
 import io
-
+from dotenv import load_dotenv, find_dotenv
 from backend.data.repository.database_repository import SQLiteRepository
 from backend.data.pipeline import DataPipeline
 from backend.models.recommender.job_recommender import JobRecommender
@@ -19,6 +19,8 @@ app = FastAPI(title="Skill-Ex AI Core API")
 # Mount static files and templates (as per original main.py)
 app.mount("/static", StaticFiles(directory="backend/static"), name="static")
 templates = Jinja2Templates(directory="backend/templates")
+
+load_dotenv(dotenv_path=find_dotenv())
 
 # Dependency Injection
 def get_repository():
