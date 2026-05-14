@@ -3,7 +3,7 @@ import requests
 import pandas as pd
 import plotly.express as px
 
-API_URL = "http://localhost:8000"
+API_URL = "http://ml-api:8000"
 
 st.set_page_config(page_title="AI Career Radar", layout="wide")
 tabs = st.tabs([" Market Trends", "Resume Matcher"])

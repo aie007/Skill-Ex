@@ -2,12 +2,15 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-COPY . . 
-
+COPY ml/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+COPY ml/ ./ml/
+COPY shared/ ./shared/
 
 ENV PYTHONPATH=/app
 
 EXPOSE 8000
 
-CMD ["uvicorn", "recommendation_api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Updated path to the FastAPI app
+CMD ["uvicorn", "ml.recommendation_api.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -1,0 +1,8 @@
+boto3
+pandas
+scikit-learn
+mlflow
+PyYAML
+pydantic
+pydantic-settings
+python-dotenv

@@ -22,7 +22,9 @@ class JobRecommender(IRecommender):
 
     def train(self):
         """Trains the model and logs to MLflow."""
-        mlflow.set_tracking_uri("file:./mlruns")
+        tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "file:./mlruns")
+        mlflow.set_tracking_uri(tracking_uri)
+        
         with mlflow.start_run(run_name="Job_Recommender_Training"):
             df = self.repository.get_all_jobs()
             if df.empty:
@@ -48,6 +50,25 @@ class JobRecommender(IRecommender):
             mlflow.log_artifact(self.artifact_path)
             
             print(f"Training complete. Avg Sim: {avg_sim:.4f}")
+            return float(avg_sim)
+        
+        return 0.0
+
+    def sync_model_from_s3(self):
+        """Attempts to download the latest model from the S3 Model Registry."""
+        try:
+            from shared.data.ingestion.s3_storage import S3StorageProvider
+            storage = S3StorageProvider()
+            bucket = settings.aws.models_bucket
+            latest_key = "models/latest_recommender.pkl"
+            
+            print(f"Checking for latest model in S3 registry: {bucket}/{latest_key}")
+            storage.download_file(bucket, latest_key, self.artifact_path)
+            print("Successfully downloaded latest model from S3.")
+            return self.load_artifacts()
+        except Exception as e:
+            print(f"Could not sync model from S3: {str(e)}")
+            return False
 
     def load_artifacts(self):
         if os.path.exists(self.artifact_path):

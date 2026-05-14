@@ -43,10 +43,17 @@ def get_repository():
 
 def get_recommender(repo=Depends(get_repository)):
     recommender = JobRecommender(repo)
-    # Auto-train if artifacts are missing
+    
+    # 1. Try to load local artifacts first
     if not recommender.load_artifacts():
-        print("Model artifacts not found. Training model...")
-        recommender.train()
+        print("Local model artifacts not found. Attempting to sync from S3 Model Registry...")
+        
+        # 2. Try to sync from S3
+        if not recommender.sync_model_from_s3():
+            print("Model registry empty or unreachable. Training fresh model...")
+            # 3. Fallback to local training if registry is empty
+            recommender.train()
+            
     return recommender
 
 def get_trend_analyzer():
