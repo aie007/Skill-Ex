@@ -1,10 +1,8 @@
-from fastapi import FastAPI, Request, Response, Query, HTTPException, UploadFile, File, Depends, Cookie
-from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
+from fastapi import FastAPI, Request, Response, Query, HTTPException, UploadFile, File, Depends
 from typing import Optional, List, Dict, Any
 import pdfplumber
 import io
+import os
 from dotenv import load_dotenv, find_dotenv
 from shared.data.repository.database_repository import SQLiteRepository
 from shared.data.pipeline import DataPipeline
@@ -15,11 +13,6 @@ from shared.utils.pii_masker import PIIMasker
 from shared.config.settings import settings
 
 app = FastAPI(title="Skill-Ex AI Core API")
-
-# Mount static files and templates (as per original main.py)
-# Mount static files and templates
-app.mount("/static", StaticFiles(directory="microservices/recommendation_api/static"), name="static")
-templates = Jinja2Templates(directory="microservices/recommendation_api/templates")
 
 load_dotenv(dotenv_path=find_dotenv())
 
@@ -62,39 +55,9 @@ def get_trend_analyzer():
 def get_extractor():
     return RegexSkillExtractor()
 
-# --- Cookie Consent Logic (from original main.py) ---
-
-async def verify_consent(consent_cookie: Optional[str] = Cookie(None, alias="user_consent")):
-    if consent_cookie != "granted":
-        raise HTTPException(
-            status_code=403, 
-            detail="Consent required. Please accept cookies to use this feature."
-        )
-    return True
-
-@app.get("/", response_class=HTMLResponse)
-async def home(request: Request):
-    consent = request.cookies.get("user_consent")
-    show_banner = True if not consent else False
-    return templates.TemplateResponse(
-        request=request, 
-        name="index.html", 
-        context={"message": "viola!", "show_banner": show_banner}
-    )
-
-@app.post("/set-consent")
-async def set_cookie_consent(response: Response, choice: str = Query(...)):
-    if choice == "accept":
-        response.set_cookie(
-            key="user_consent",
-            value="granted",
-            max_age=31536000,
-            httponly=True,
-            samesite="lax"
-        )
-        return {"status": "accepted"}
-    response.delete_cookie(key="user_consent")
-    return {"status": "rejected"}
+@app.get("/")
+async def home():
+    return {"status": "online", "service": "Skill-Ex AI Core API"}
 
 # --- Consolidated Core API Endpoints ---
 

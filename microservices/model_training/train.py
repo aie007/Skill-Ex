@@ -4,8 +4,8 @@ import os
 # Add the project root to sys.path to allow importing from shared
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
-from shared.data_layer_temp.repository.database_repository import SQLiteRepository
-from backend.models.recommender.job_recommender import JobRecommender
+from shared.data.repository.database_repository import SQLiteRepository
+from microservices.recommendation_api.engine import JobRecommender
 
 def run_training():
     """Trains the model and logs to MLflow."""
