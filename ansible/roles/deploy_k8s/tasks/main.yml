@@ -1,44 +1,71 @@
 ---
 - name: Create namespace
-  shell: kubectl create namespace skill-ex-demo --dry-run=client -o yaml | kubectl apply -f -
+  shell: |
+    unset http_proxy; unset https_proxy; unset no_proxy;
+    kubectl create namespace skill-ex-demo --dry-run=client -o yaml | kubectl apply -f - --validate=false
   ignore_errors: true
 
 - name: Delete existing model-training pod
-  shell: kubectl delete pod model-training-deployment-0 -n skill-ex-demo
+  shell: |
+    unset http_proxy; unset https_proxy; unset no_proxy;
+    kubectl delete pod model-training-deployment-0 -n skill-ex-demo
   ignore_errors: true
 
 - name: Delete existing dashboard pod
-  shell: kubectl delete pod dashboard-deployment-0 -n skill-ex-demo
+  shell: |
+    unset http_proxy; unset https_proxy; unset no_proxy;
+    kubectl delete pod dashboard-deployment-0 -n skill-ex-demo
   ignore_errors: true
 
 - name: Delete existing mlflow pod
-  shell: kubectl delete pod mlflow-deployment-0 -n skill-ex-demo
+  shell: |
+    unset http_proxy; unset https_proxy; unset no_proxy;
+    kubectl delete pod mlflow-deployment-0 -n skill-ex-demo
   ignore_errors: true
 
 - name: Delete existing ml-api pod
-  shell: kubectl delete pod ml-api-deployment-0 -n skill-ex-demo
+  shell: |
+    unset http_proxy; unset https_proxy; unset no_proxy;
+    kubectl delete pod ml-api-deployment-0 -n skill-ex-demo
   ignore_errors: true
 
 - name: Deploy model-training
-  shell: kubectl apply -f ../k8s/model-training/deployment.yaml -n skill-ex-demo
+  shell: |
+    unset http_proxy; unset https_proxy; unset no_proxy;
+    kubectl apply -f k8s/model-training/deployment.yaml -n skill-ex-demo --validate=false
 
 - name: Deploy dashboard
-  shell: kubectl apply -f ../k8s/dashboard/deployment.yaml -n skill-ex-demo
+  shell: |
+    unset http_proxy; unset https_proxy; unset no_proxy;
+    kubectl apply -f k8s/dashboard/deployment.yaml -n skill-ex-demo --validate=false
 
 - name: Deploy mlflow
-  shell: kubectl apply -f ../k8s/mlflow/deployment.yaml -n skill-ex-demo
+  shell: |
+    unset http_proxy; unset https_proxy; unset no_proxy;
+    kubectl apply -f k8s/mlflow/deployment.yaml -n skill-ex-demo --validate=false
 
 - name: Deploy ml-api
-  shell: kubectl apply -f ../k8s/ml-api/deployment.yaml -n skill-ex-demo
+  shell: |
+    unset http_proxy; unset https_proxy; unset no_proxy;
+    kubectl apply -f k8s/ml-api/deployment.yaml -n skill-ex-demo --validate=false
 
+# ELK Deployment
 - name: Deploy Elasticsearch
-  shell: kubectl apply -f ../elk/elasticsearch/ -n skill-ex-demo
+  shell: |
+    unset http_proxy; unset https_proxy; unset no_proxy;
+    kubectl apply -f elk/elasticsearch/ -n skill-ex-demo --validate=false
 
 - name: Deploy Logstash
-  shell: kubectl apply -f ../elk/logstash/ -n skill-ex-demo
+  shell: |
+    unset http_proxy; unset https_proxy; unset no_proxy;
+    kubectl apply -f elk/logstash/ -n skill-ex-demo --validate=false
 
 - name: Deploy Kibana
-  shell: kubectl apply -f ../elk/kibana/ -n skill-ex-demo
+  shell: |
+    unset http_proxy; unset https_proxy; unset no_proxy;
+    kubectl apply -f elk/kibana/ -n skill-ex-demo --validate=false
 
 - name: Deploy Filebeat
-  shell: kubectl apply -f ../elk/filebeat/ -n skill-ex-demo
+  shell: |
+    unset http_proxy; unset https_proxy; unset no_proxy;
+    kubectl apply -f elk/filebeat/ -n skill-ex-demo --validate=false
