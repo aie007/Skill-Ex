@@ -119,12 +119,12 @@ pipeline {
             when { expression { env.ELK_CHANGED == 'true' } }
             steps {
                 script {
-                    echo "Deploying ELK Stack to Kubernetes..."
-                    // Applying all ELK manifests in the correct order
-                    sh "kubectl apply -f elk/elasticsearch/"
-                    sh "kubectl apply -f elk/logstash/"
-                    sh "kubectl apply -f elk/kibana/"
-                    sh "kubectl apply -f elk/filebeat/"
+                    echo "Deploying ELK Stack to Kubernetes (skipping validation)..."
+                    // Applying all ELK manifests with validation disabled to bypass proxy issues
+                    sh "kubectl apply -f elk/elasticsearch/ --validate=false"
+                    sh "kubectl apply -f elk/logstash/ --validate=false"
+                    sh "kubectl apply -f elk/kibana/ --validate=false"
+                    sh "kubectl apply -f elk/filebeat/ --validate=false"
                 }
             }
         }
