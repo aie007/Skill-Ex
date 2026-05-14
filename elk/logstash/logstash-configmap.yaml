@@ -25,7 +25,7 @@ data:
 
     output {
       elasticsearch {
-        hosts => ["http://elasticsearch.demo-basic.svc.cluster.local:9200"]
+        hosts => ["http://elasticsearch.skill-ex-demo.svc.cluster.local:9200"]
         index => "logstash-%{+YYYY.MM.dd}"
       }
 

@@ -28,10 +28,10 @@ data:
           when:
             not:
               equals:
-                kubernetes.namespace: "demo-basic"
+                kubernetes.namespace: "skill-ex-demo"
 
     output.logstash:
-      hosts: ["logstash.demo-basic.svc.cluster.local:5044"]
+      hosts: ["logstash.skill-ex-demo.svc.cluster.local:5044"]
 
 
     setup.kibana:

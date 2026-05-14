@@ -132,12 +132,12 @@ pipeline {
 
     post {
         success {
-            mail to: "${EMAIL_TO},203ajmk@gmail.com",
+            mail to: "${EMAIL_TO},203ajmk@gmail.com,aieshah.nasir@iiitb.ac.in",
                  subject: "SUCCESS: Skill-Ex Build '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
                  body: "Great news! The Skill-Ex microservices were successfully built and deployed.\n\nBuild URL: ${env.BUILD_URL}"
         }
         failure {
-            mail to: "${EMAIL_TO},203ajmk@gmail.com",
+            mail to: "${EMAIL_TO},203ajmk@gmail.com,aieshah.nasir@iiitb.ac.in",
                  subject: "FAILURE: Skill-Ex Build '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
                  body: "Attention: The Skill-Ex build failed. Please check the logs immediately.\n\nBuild URL: ${env.BUILD_URL}"
         }
