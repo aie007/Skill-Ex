@@ -1,0 +1,8 @@
+---
+- name: Deploy Job Trends and Recommendation App
+  hosts: local
+  become: false
+  vars:
+    kube_namespace: skill-ex-demo 
+  roles:
+    - deploy_k8s

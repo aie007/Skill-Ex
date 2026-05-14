@@ -1,0 +1,32 @@
+---
+- name: Create namespace
+  shell: kubectl create namespace skill-ex-demo --dry-run=client -o yaml | kubectl apply -f -
+  ignore_errors: true
+
+- name: Delete existing model-training pod
+  shell: kubectl delete pod model-training-deployment-0 -n skill-ex-demo
+  ignore_errors: true
+
+- name: Delete existing dashboard pod
+  shell: kubectl delete pod dashboard-deployment-0 -n skill-ex-demo
+  ignore_errors: true
+
+- name: Delete existing mlflow pod
+  shell: kubectl delete pod mlflow-deployment-0 -n skill-ex-demo
+  ignore_errors: true
+
+- name: Delete existing ml-api pod
+  shell: kubectl delete pod ml-api-deployment-0 -n skill-ex-demo
+  ignore_errors: true
+
+- name: Deploy model-training
+  shell: kubectl apply -f ../k8s/model-training/deployment.yaml -n skill-ex-demo
+
+- name: Deploy dashboard
+  shell: kubectl apply -f ../k8s/dashboard/deployment.yaml -n skill-ex-demo
+
+- name: Deploy mlflow
+  shell: kubectl apply -f ../k8s/mlflow/deployment.yaml -n skill-ex-demo
+
+- name: Deploy ml-api
+  shell: kubectl apply -f ../k8s/ml-api/deployment.yaml -n skill-ex-demo
