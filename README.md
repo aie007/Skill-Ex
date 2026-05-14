@@ -25,9 +25,10 @@ backend/
 ## Setup
 
 1. **Virtual Environment**:
-   Ensure your virtual environment is active.
+   Ensure your virtual environment is active and dependencies are installed.
    ```bash
    source venv/bin/activate
+   pip install -r requirements.txt
    ```
 
 2. **Environment Variables**:
@@ -36,6 +37,8 @@ backend/
    RAPIDAPI_KEY=your_key_here
    AWS_ACCESS_KEY_ID=your_id_here
    AWS_SECRET_ACCESS_KEY=your_secret_here
+   AWS_RAW_BUCKET=amzn-s3-raw-bucket-skillex
+   AWS_PROCESSED_BUCKET=amzn-s3-processed-bucket-skillex
    ```
 
 ## Running the Backend
@@ -51,16 +54,64 @@ uvicorn backend.main:app --reload --port 8000
 - **API Documentation**: [http://localhost:8000/docs](http://localhost:8000/docs)
 - **Web UI**: [http://localhost:8000/](http://localhost:8000/)
 
-## Running the Frontend
+## MLOps Pipeline (DVC)
 
-The primary dashboard is built with Streamlit.
+We use DVC to manage data versioning and pipeline execution.
 
+1. **Pull Data**:
+   To fetch the latest versioned data from S3:
+   ```bash
+   dvc pull
+   ```
+
+2. **Run Pipeline**:
+   To execute the full data ingestion and model training pipeline (Fetch -> Sync -> Train):
+   ```bash
+   dvc repro
+   ```
+
+3. **Track Changes**:
+   If you modify data or logic, run `dvc repro` and then push the new state:
+   ```bash
+   dvc push
+   ```
+
+## Workflow Orchestration (Airflow)
+
+A weekly automated pipeline is configured in `airflow-jobs/` to keep the system up to date.
+
+### Option A: Running with Docker (Recommended)
+This is the easiest way to run the full Airflow stack (Scheduler, Worker, Webserver).
 ```bash
-# From the project root
-streamlit run backend/app.py
+cd airflow-jobs
+docker-compose up -d
 ```
+The UI will be available at [http://localhost:8085](http://localhost:8085) (default credentials: `airflow`/`airflow`).
 
-- **Dashboard**: [http://localhost:8501](http://localhost:8501)
+### Option B: Running with Virtual Environment
+If you prefer to run locally without Docker:
+1. **Set Airflow Home**:
+   ```bash
+   export AIRFLOW_HOME=$(pwd)/airflow-jobs
+   ```
+2. **Initialize Database**:
+   ```bash
+   ./venv/bin/airflow db init
+   ```
+3. **Create Admin User**:
+   ```bash
+   ./venv/bin/airflow users create --username admin --firstname admin --lastname admin --role Admin --email admin@example.com --password admin
+   ```
+4. **Start Scheduler** (handles periodic runs):
+   ```bash
+   ./venv/bin/airflow scheduler
+   ```
+4. **Start Webserver** (UI):
+   ```bash
+   ./venv/bin/airflow webserver -p 8080
+   ```
+
+2. **DAG Location**: `airflow-jobs/dags/weekly_mlops.py`
 
 ## MLflow & Experiment Tracking
 
@@ -76,7 +127,8 @@ mlflow ui --port 5000
 
 ## Key Features
 
-- **Automatic S3 Sync**: On first run, the backend fetches and processes raw job data from S3.
+- **Automated Pipeline**: End-to-end flow from API to versioned models.
+- **Data Version Control**: DVC ensures reproducibility of datasets.
 - **Skill Extraction**: High-performance regex-based extraction for 150+ tech skills.
 - **Job Recommendations**: TF-IDF based matching with skill gap analysis.
 - **Market Trends**: Time-series penetration and momentum analysis for tech skills.

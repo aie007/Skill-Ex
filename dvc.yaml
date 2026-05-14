@@ -1,0 +1,20 @@
+stages:
+  ingest:
+    cmd: export PYTHONPATH=$PYTHONPATH:. && ./venv/bin/python scripts/pipeline_tasks.py fetch-and-sync
+    deps:
+      - scripts/pipeline_tasks.py
+      - backend/data/pipeline.py
+    outs:
+      - job_market.db:
+          cache: true
+          persist: true
+
+  train:
+    cmd: export PYTHONPATH=$PYTHONPATH:. && ./venv/bin/python scripts/pipeline_tasks.py train
+    deps:
+      - job_market.db
+      - scripts/pipeline_tasks.py
+      - backend/models/recommender/job_recommender.py
+    metrics:
+      - mlruns:
+          cache: false

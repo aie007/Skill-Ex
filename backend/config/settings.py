@@ -3,6 +3,10 @@ import yaml
 from typing import List, Dict, Any, Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
+from dotenv import load_dotenv
+
+
+load_dotenv()
 
 class APISettings(BaseSettings):
     url: str = "https://jsearch.p.rapidapi.com/search"
@@ -24,9 +28,9 @@ class DatabaseSettings(BaseSettings):
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
     
-    api: APISettings = APISettings()
-    aws: AWSSettings = AWSSettings()
-    database: DatabaseSettings = DatabaseSettings()
+    api: APISettings = Field(default_factory=APISettings)
+    aws: AWSSettings = Field(default_factory=AWSSettings)
+    database: DatabaseSettings = Field(default_factory=DatabaseSettings)
     experience_levels: Dict[str, str] = {
         "senior": "Senior|Lead|Principal|Staff|Architect",
         "mid": "Mid|Intermediate|Experienced",
