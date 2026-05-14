@@ -118,7 +118,14 @@ pipeline {
         stage('Deploy ELK Stack') {
             when { expression { env.ELK_CHANGED == 'true' } }
             steps {
-                build job: 'elk-deployment', wait: false
+                script {
+                    echo "Deploying ELK Stack to Kubernetes..."
+                    // Applying all ELK manifests in the correct order
+                    sh "kubectl apply -f elk/elasticsearch/"
+                    sh "kubectl apply -f elk/logstash/"
+                    sh "kubectl apply -f elk/kibana/"
+                    sh "kubectl apply -f elk/filebeat/"
+                }
             }
         }
 

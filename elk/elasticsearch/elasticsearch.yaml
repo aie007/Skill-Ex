@@ -19,14 +19,14 @@ spec:
         ports:
         - containerPort: 9200
         - containerPort: 9300
-          env:
-            - name: discovery.type
-              value: single-node
-          resources:
-            limits:
-              memory: "1Gi"
-            requests:
-              memory: "512Mi"
+        env:
+        - name: discovery.type
+          value: single-node
+        resources:
+          limits:
+            memory: "1Gi"
+          requests:
+            memory: "512Mi"
 ---
 apiVersion: v1
 kind: Service

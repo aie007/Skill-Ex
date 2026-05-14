@@ -12,9 +12,9 @@ data:
     }
 
     filter {
-      # Example: Parse multiline Java logs
+      # Updated Grok for Python/Uvicorn logs
       grok {
-        match => { "message" => "%{TIMESTAMP_ISO8601:timestamp} \[%{DATA:thread}\] %{LOGLEVEL:level} %{JAVACLASS:class} - %{GREEDYDATA:log_message}" }
+        match => { "message" => "%{LOGLEVEL:level}:\s+%{GREEDYDATA:log_message}" }
         overwrite => [ "message" ]
       }
 
