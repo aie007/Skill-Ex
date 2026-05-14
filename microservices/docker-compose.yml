@@ -1,0 +1,36 @@
+services:
+  # ingestion:
+  #   build:
+  #     context: ./ingestion
+  #     dockerfile: Dockerfile
+  #   container_name: ingestion_service
+  #   env_file: .env
+  #   volumes:
+  #     - ./ingestion:/app
+  #   depends_on:
+  #     - ml-api
+
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    container_name: dashboard_service
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./dashboard:/app
+    depends_on:
+      - ml-api
+
+  ml-api:
+    build:
+      context: ./ml
+      dockerfile: Dockerfile
+    container_name: ml_api_service
+    ports:
+      - "8000:8000"
+    env_file: .env
+    volumes:
+      - .:/app  # Maps root to allow access to shared and microservices
+    environment:
+      - PYTHONPATH=/app

@@ -4,7 +4,6 @@ pandas
 spacy
 typing
 skillNer
-sqlite3
 boto3
 requests
 pathlib_abc

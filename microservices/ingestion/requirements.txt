@@ -8,7 +8,6 @@ python-dotenv
 typing
 pathlib_abc==0.5.2
 spacy
-sqlite3
 boto3
 requests 
 skillNer
