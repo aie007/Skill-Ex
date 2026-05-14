@@ -7,7 +7,6 @@ services:
     env_file: .env
     volumes:
       - ./microservices/ingestion:/app
-      - ./ml/shared:/app/ml/shared
     depends_on:
       - ml-api
 
