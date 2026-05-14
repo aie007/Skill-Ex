@@ -24,6 +24,29 @@ pipeline {
             }
         }
 
+        stage('Generate .env') {
+            steps {
+                script {
+                    echo "Generating .env file from Jenkins credentials..."
+                    withCredentials([
+                        string(credentialsId: 'RAPIDAPI_KEY', variable: 'RAPID_KEY'),
+                        usernamePassword(credentialsId: 'AWS_CREDENTIALS', passwordVariable: 'AWS_SECRET', usernameVariable: 'AWS_ID')
+                    ]) {
+                        sh """
+                        echo "AWS_ACCESS_KEY_ID=${AWS_ID}" > microservices/.env
+                        echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET}" >> microservices/.env
+                        echo "RAPIDAPI_KEY=${RAPID_KEY}" >> microservices/.env
+                        echo "AWS_RAW_BUCKET=amzn-s3-raw-bucket-skillex" >> microservices/.env
+                        echo "AWS_PROCESSED_BUCKET=amzn-s3-processed-bucket-skillex" >> microservices/.env
+                        echo "AWS_MODELS_BUCKET=amzn-s3-models-bucket" >> microservices/.env
+                        echo "PYTHONUNBUFFERED=1" >> microservices/.env
+                        echo "APP_ENV=production" >> microservices/.env
+                        """
+                    }
+                }
+            }
+        }
+
         stage('Detect Changes') {
             steps {
                 script {
@@ -61,17 +84,17 @@ pipeline {
             }
         }
 
-        // stage('Build & Push Dashboard') {
-        //     when { expression { env.DASHBOARD_CHANGED == 'true' } }
-        //     steps {
-        //         script {
-        //             docker.withRegistry('', 'DockerCred') {
-        //                 def img = docker.build("${DOCKER_USER_NAME}/microservices-dashboard", "-f microservices/dashboard/Dockerfile microservices")
-        //                 img.push('latest')
-        //             }
-        //         }
-        //     }
-        // }
+        stage('Build & Push Dashboard') {
+            when { expression { env.DASHBOARD_CHANGED == 'true' } }
+            steps {
+                script {
+                    docker.withRegistry('', 'DockerCred') {
+                        def img = docker.build("${DOCKER_USER_NAME}/microservices-dashboard", "-f microservices/dashboard/Dockerfile microservices")
+                        img.push('latest')
+                    }
+                }
+            }
+        }
 
         stage('Build & Push ML Services') {
             when { expression { env.ML_CHANGED == 'true' } }
@@ -93,7 +116,6 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('', 'DockerCred') {
-                        // Custom MLflow build from the mlflow subfolder
                         def img = docker.build("${DOCKER_USER_NAME}/microservices-mlflow", "microservices/mlflow")
                         img.push('latest')
                     }
@@ -111,14 +133,13 @@ pipeline {
         stage('Run Ansible Deployment') {
             steps {
                 script {
+                    // Ansible Vault removed as requested
                     withCredentials([
-                        usernamePassword(credentialsId: 'AWS_CREDENTIALS', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID'),
-                        string(credentialsId: 'AnsibleVaultCred', variable: 'VAULT_PASS')
+                        usernamePassword(credentialsId: 'AWS_CREDENTIALS', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')
                     ]) {
                         ansiblePlaybook(
                             playbook: 'ansible/deploy.yml',
                             inventory: 'ansible/inventory',
-                            vaultCredentialsId: 'AnsibleVaultCred',
                             extraVars: [
                                 aws_access_key: "${AWS_ACCESS_KEY_ID}",
                                 aws_secret_key: "${AWS_SECRET_ACCESS_KEY}"
@@ -132,12 +153,12 @@ pipeline {
 
     post {
         success {
-            mail to: "${EMAIL_TO},203ajmk@gmail.com,aieshah.nasir@iiitb.ac.in",
+            mail to: "${EMAIL_TO},203ajmk@gmail.com",
                  subject: "SUCCESS: Skill-Ex Build '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
                  body: "Great news! The Skill-Ex microservices were successfully built and deployed.\n\nBuild URL: ${env.BUILD_URL}"
         }
         failure {
-            mail to: "${EMAIL_TO},203ajmk@gmail.com,aieshah.nasir@iiitb.ac.in",
+            mail to: "${EMAIL_TO},203ajmk@gmail.com",
                  subject: "FAILURE: Skill-Ex Build '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
                  body: "Attention: The Skill-Ex build failed. Please check the logs immediately.\n\nBuild URL: ${env.BUILD_URL}"
         }
