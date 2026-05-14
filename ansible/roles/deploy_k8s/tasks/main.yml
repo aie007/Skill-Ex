@@ -30,3 +30,15 @@
 
 - name: Deploy ml-api
   shell: kubectl apply -f ../k8s/ml-api/deployment.yaml -n skill-ex-demo
+
+- name: Deploy Elasticsearch
+  shell: kubectl apply -f ../elk/elasticsearch/ -n skill-ex-demo
+
+- name: Deploy Logstash
+  shell: kubectl apply -f ../elk/logstash/ -n skill-ex-demo
+
+- name: Deploy Kibana
+  shell: kubectl apply -f ../elk/kibana/ -n skill-ex-demo
+
+- name: Deploy Filebeat
+  shell: kubectl apply -f ../elk/filebeat/ -n skill-ex-demo

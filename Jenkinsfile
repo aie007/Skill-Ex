@@ -115,20 +115,6 @@ pipeline {
             }
         }
 
-        stage('Deploy ELK Stack') {
-            when { expression { env.ELK_CHANGED == 'true' } }
-            steps {
-                script {
-                    echo "Deploying ELK Stack to Kubernetes (skipping validation)..."
-                    // Applying all ELK manifests with validation disabled to bypass proxy issues
-                    sh "kubectl apply -f elk/elasticsearch/ --validate=false"
-                    sh "kubectl apply -f elk/logstash/ --validate=false"
-                    sh "kubectl apply -f elk/kibana/ --validate=false"
-                    sh "kubectl apply -f elk/filebeat/ --validate=false"
-                }
-            }
-        }
-
         stage('Run Ansible Deployment') {
             steps {
                 script {
