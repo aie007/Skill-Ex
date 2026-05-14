@@ -10,11 +10,11 @@ pipeline {
         GITHUB_REPO_URL = 'https://github.com/anuja-jmk/Skill-Ex.git'
         EMAIL_TO = 'anuja2033@gmail.com'
         // Change Detection Flags
-        INGESTION_CHANGED = 'false'
-        DASHBOARD_CHANGED = 'false'
-        ML_CHANGED = 'false'
-        MLFLOW_CHANGED = 'false'
-        ELK_CHANGED = 'false'
+        // INGESTION_CHANGED = 'false'
+        // DASHBOARD_CHANGED = 'false'
+        // ML_CHANGED = 'false'
+        // MLFLOW_CHANGED = 'false'
+        // ELK_CHANGED = 'false'
     }
 
     stages {
@@ -131,7 +131,7 @@ pipeline {
                     ]) {
                         ansiblePlaybook(
                             playbook: 'ansible/deploy.yml',
-                            inventory: 'ansible/inventory',
+                            inventory: 'ansible/inventory.ini',
                             extraVars: [
                                 aws_access_key: "${AWS_ACCESS_KEY_ID}",
                                 aws_secret_key: "${AWS_SECRET_ACCESS_KEY}"
