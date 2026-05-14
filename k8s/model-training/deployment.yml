@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: model-training-deployment
+  namespace: skill-ex-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: model-training
+  template:
+    metadata:
+      labels:
+        app: model-training
+    spec:
+      containers:
+        - name: model-training
+          image: anujajose/microservices-model-training:latest
+          ports:
+            - containerPort: ?
