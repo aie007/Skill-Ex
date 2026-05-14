@@ -47,27 +47,19 @@ pipeline {
             }
         }
 
-        stage('Detect Changes') {
+      stage('Detect Changes') {
             steps {
                 script {
-                    def commits = sh(script: "git rev-list HEAD --count", returnStdout: true).trim().toInteger()
-
-                    if (commits < 2) {
-                        echo "First commit or fresh repo detected. Forcing all builds."
-                        env.INGESTION_CHANGED = 'true'
-                        env.DASHBOARD_CHANGED = 'true'
-                        env.ML_CHANGED = 'true'
-                        env.MLFLOW_CHANGED = 'true'
-                        env.ELK_CHANGED = 'true'
-                    } else {
-                        def changeLog = sh(script: "git diff --name-only HEAD~1 HEAD", returnStdout: true).trim().split("\n")
-                        
-                        env.INGESTION_CHANGED = changeLog.any { it.startsWith("microservices/ingestion/") || it.startsWith("microservices/shared/") }.toString()
-                        env.DASHBOARD_CHANGED = changeLog.any { it.startsWith("microservices/dashboard/") || it.startsWith("microservices/shared/") }.toString()
-                        env.ML_CHANGED = changeLog.any { it.startsWith("microservices/ml/") || it.startsWith("microservices/model_training/") || it.startsWith("microservices/shared/") }.toString()
-                        env.MLFLOW_CHANGED = changeLog.any { it.startsWith("microservices/mlflow/") }.toString()
-                        env.ELK_CHANGED = changeLog.any { it.startsWith("elk/") }.toString()
-                    }
+                    echo "Forcing all builds to run regardless of changes."
+                    
+                    env.INGESTION_CHANGED = 'true'
+                    env.DASHBOARD_CHANGED = 'true'
+                    env.ML_CHANGED = 'true'
+                    env.MLFLOW_CHANGED = 'true'
+                    env.ELK_CHANGED = 'true'
+                    
+                    // Optional: Print to console to verify
+                    echo "Flags set: Ingestion=${env.INGESTION_CHANGED}, Dashboard=${env.DASHBOARD_CHANGED}, ML=${env.ML_CHANGED}"
                 }
             }
         }
