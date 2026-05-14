@@ -72,6 +72,7 @@ async def recommend_from_pdf(
         with pdfplumber.open(io.BytesIO(content)) as pdf:
             resume_text = " ".join([p.extract_text() for p in pdf.pages if p.extract_text()])
         
+        print("line 1")
         # Apply PII Masking
         masked_resume = PIIMasker.mask(resume_text)
         
@@ -83,9 +84,11 @@ async def recommend_from_pdf(
                 "recommendations": [], 
                 "message": "No recognized skills found"
             }
-
+        print("line2")
+        print(masked_skills)
         recommendations, gaps = recommender.recommend(", ".join(masked_skills))
-        
+        print("i got the recommendations")
+        print(recommendations)
         return {
             "masked_resume": masked_resume,
             "extracted_skills": masked_skills, 

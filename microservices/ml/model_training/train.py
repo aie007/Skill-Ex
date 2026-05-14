@@ -5,7 +5,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from shared.data.repository.database_repository import SQLiteRepository
-from microservices.recommendation_api.engine import JobRecommender
+from recommendation_api.engine import JobRecommender
 
 def run_training():
     """Trains the model and logs to MLflow."""

@@ -5,10 +5,10 @@ import datetime
 # Add the project root to sys.path to allow importing from shared
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
-from shared.data.pipeline import DataPipeline
-from shared.data.ingestion.job_fetcher import JSearchFetcher
-from shared.data.ingestion.s3_storage import S3StorageProvider
-from shared.config.settings import settings
+from ml.shared.data.pipeline import DataPipeline
+from ml.shared.data.ingestion.job_fetcher import JSearchFetcher
+from ml.shared.data.ingestion.s3_storage import S3StorageProvider
+from ml.shared.config.settings import settings
 
 def run_ingestion():
     """Fetches jobs from API, pushes to S3, and syncs to SQLite."""
