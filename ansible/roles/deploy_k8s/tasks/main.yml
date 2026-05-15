@@ -33,7 +33,7 @@
 - name: Deploy dashboard
   shell: |
     unset http_proxy; unset https_proxy; unset no_proxy;
-    kubectl apply -f ../k8s/dashboard/deployment.yml -n {{ kube_namespace }}
+    kubectl apply -f ../k8s/dashboard -n {{ kube_namespace }}
 
 - name: Deploy mlflow
   shell: |
@@ -43,7 +43,7 @@
 - name: Deploy ml-api
   shell: |
     unset http_proxy; unset https_proxy; unset no_proxy;
-    kubectl apply -f ../k8s/ml-api/deployment.yml -n {{ kube_namespace }} 
+    kubectl apply -f ../k8s/ml-api -n {{ kube_namespace }} 
 
 # ELK Deployment
 - name: Deploy Elasticsearch
