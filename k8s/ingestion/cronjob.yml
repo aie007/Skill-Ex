@@ -1,0 +1,26 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ingestion-cronjob
+  namespace: skill-ex-demo
+spec:
+  # Schedule: Every Sunday at midnight (00:00)
+  # Standard cron format: Minute Hour DayOfMonth Month DayOfWeek
+  schedule: "0 0 * * 0" 
+  concurrencyPolicy: Forbid # Prevents a new job from starting if the old one is still running
+  successfulJobsHistoryLimit: 3 # Keeps track of the last 3 successful runs for logs
+  failedJobsHistoryLimit: 5     # Keeps track of the last 5 failed runs to help debug
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: ingestion
+        spec:
+          restartPolicy: OnFailure # Crucial: Only restarts if the script explicitly fails/crashes
+          containers:
+            - name: ingestion
+              image: anujajose/microservices-ingestion:latest
+              envFrom:
+                - secretRef:
+                    name: app-secrets

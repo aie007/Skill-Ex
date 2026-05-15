@@ -7,7 +7,7 @@ pipeline {
 
     environment {
         DOCKER_HUB = credentials('DockerHubCred')
-        GITHUB_REPO_URL = 'https://github.com/anuja-jmk/Skill-Ex.git'
+        GITHUB_REPO_URL = 'https://github.com/aie007/Skill-Ex.git'
         EMAIL_TO = 'aieshah9241@gmail.com, 203ajmk@gmail.com'
         KUBECONFIG = "/var/lib/jenkins/kube-minikube/config"
         MINIKUBE_HOME = "/var/lib/jenkins/kube-minikube/.minikube"
@@ -18,9 +18,25 @@ pipeline {
         // MLFLOW_CHANGED = 'false'
         // ELK_CHANGED = 'false'
         RAPIDAPI_KEY = credentials('rapidapi-key')
+        ANSIBLE_ROLES_PATH = "${WORKSPACE}/ansible/roles"
     }
 
+    options {
+        // Stops Jenkins from checking out code before the cleanup step runs
+        skipDefaultCheckout(true) 
+    }
+    
     stages {
+        stage('Clean Workspace') {
+            steps {
+                sh 'git clean -fdx'
+                sh 'git reset --hard HEAD'
+                // Deletes the workspace directory before the build starts
+                cleanWs()
+                checkout scm
+            }
+        }
+
         stage('Checkout') {
             steps {
                 git branch: 'main', url: "${GITHUB_REPO_URL}"

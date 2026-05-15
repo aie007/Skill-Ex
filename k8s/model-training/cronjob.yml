@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: model-training-cronjob
+  namespace: skill-ex-demo
+spec:
+  schedule: "*/5 * * * *" 
+  concurrencyPolicy: Forbid 
+  successfulJobsHistoryLimit: 3 
+  failedJobsHistoryLimit: 5     
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: model-training
+        spec:
+          restartPolicy: OnFailure 
+          containers:
+            - name: model-training
+              image: anujajose/microservices-model-training:latest
+              envFrom:
+                - secretRef:
+                    name: app-secrets
