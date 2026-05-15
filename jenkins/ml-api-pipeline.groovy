@@ -8,7 +8,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/anuja-jmk/Skill-Ex.git'
+                git 'https://github.com/aie007/Skill-Ex.git'
             }
         }
 

@@ -66,7 +66,7 @@ pipeline {
             when { expression { env.INGESTION_CHANGED == 'true' } }
             steps {
                 script {
-                    docker.withRegistry('', 'DockerCred') {
+                    docker.withRegistry('', 'DockerHubCred') {
                         def img = docker.build("${DOCKER_USER_NAME}/microservices-ingestion", "-f microservices/ingestion/Dockerfile microservices")
                         img.push('latest')
                     }
@@ -78,7 +78,7 @@ pipeline {
             when { expression { env.DASHBOARD_CHANGED == 'true' } }
             steps {
                 script {
-                    docker.withRegistry('', 'DockerCred') {
+                    docker.withRegistry('', 'DockerHubCred') {
                         def img = docker.build("${DOCKER_USER_NAME}/microservices-dashboard", "-f microservices/dashboard/Dockerfile microservices")
                         img.push('latest')
                     }
