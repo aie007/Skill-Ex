@@ -21,6 +21,11 @@ pipeline {
         ANSIBLE_ROLES_PATH = "${WORKSPACE}/ansible/roles"
     }
 
+    options {
+        // Stops Jenkins from checking out code before the cleanup step runs
+        skipDefaultCheckout(true) 
+    }
+    
     stages {
         stage('Clean Workspace') {
             steps {
