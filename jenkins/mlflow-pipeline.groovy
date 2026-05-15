@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'anujajose/microservices-mlflow'
+        IMAGE_NAME = 'aie007/microservices-mlflow'
     }
 
     stages {

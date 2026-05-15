@@ -15,6 +15,6 @@ spec:
     spec:
       containers:
         - name: dashboard
-          image: anujajose/microservices-dashboard:latest
+          image: aie007/microservices-dashboard:latest
           ports:
             - containerPort: 8501

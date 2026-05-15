@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'anujajose/microservices-model-training'
+        IMAGE_NAME = 'aie007/microservices-model-training'
     }
 
     stages {

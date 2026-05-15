@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'anujajose/microservices-dashboard'
+        IMAGE_NAME = 'aie007/microservices-dashboard'
         KUBECONFIG = '/var/lib/jenkins/.kube/config'   
     }
 
