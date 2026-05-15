@@ -16,3 +16,6 @@ spec:
       containers:
         - name: model-training
           image: anujajose/microservices-model-training:latest
+          envFrom:
+            - secretRef:
+                name: app-secrets

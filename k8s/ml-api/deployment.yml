@@ -16,5 +16,8 @@ spec:
       containers:
         - name: ml-api
           image: anujajose/microservices-ml-api:latest
+          envFrom:
+            - secretRef:
+                name: app-secrets
           ports:
             - containerPort: 8000

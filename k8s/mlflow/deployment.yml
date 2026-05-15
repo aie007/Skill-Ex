@@ -16,5 +16,8 @@ spec:
       containers:
         - name: mlflow
           image: anujajose/microservices-mlflow:latest
+          envFrom:
+            - secretRef:
+                name: app-secrets
           ports:
             - containerPort: 5000
