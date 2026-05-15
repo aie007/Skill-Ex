@@ -50,7 +50,7 @@
 - name: Deploy mlflow
   shell: |
     unset http_proxy; unset https_proxy; unset no_proxy;
-    kubectl apply -f ../k8s/mlflow/deployment.yml -n {{ kube_namespace }}
+    kubectl apply -f ../k8s/mlflow -n {{ kube_namespace }}
 
 - name: Deploy ml-api
   shell: |
