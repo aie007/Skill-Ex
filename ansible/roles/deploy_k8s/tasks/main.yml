@@ -37,11 +37,19 @@
       --from-literal=AWS_MODELS_BUCKET="amzn-s3-models-bucket" \
       -n {{ kube_namespace }} --dry-run=client -o yaml | kubectl apply -f -
 
+- name: Remove old model-training deployment if it exists
+  shell: |
+    kubectl delete deployment model-training-deployment -n {{ kube_namespace }} --ignore-not-found=true
 
-- name: Deploy model-training
+- name: Deploy model-training cronjob
   shell: |
     unset http_proxy; unset https_proxy; unset no_proxy;
-    kubectl apply -f ../k8s/model-training/deployment.yml -n {{ kube_namespace }} 
+    kubectl apply -f ../k8s/model-training/cronjob.yml -n {{ kube_namespace }}
+
+# - name: Deploy model-training
+#   shell: |
+#     unset http_proxy; unset https_proxy; unset no_proxy;
+#     kubectl apply -f ../k8s/model-training/deployment.yml -n {{ kube_namespace }} 
 
 - name: Deploy dashboard
   shell: |
