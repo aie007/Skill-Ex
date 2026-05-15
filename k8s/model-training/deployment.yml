@@ -16,5 +16,3 @@ spec:
       containers:
         - name: model-training
           image: aie007/microservices-model-training:latest
-          ports:
-            - containerPort: ?
