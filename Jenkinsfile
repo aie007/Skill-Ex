@@ -6,9 +6,9 @@ pipeline {
     }
 
     environment {
-        DOCKER_USER_NAME = 'aie007'
-        GITHUB_REPO_URL = 'https://github.com/aie007/Skill-Ex.git'
-        EMAIL_TO = 'aieshah9241@gmail.com'
+        DOCKER_HUB = credentials('DockerHubCred')
+        GITHUB_REPO_URL = 'https://github.com/anuja-jmk/Skill-Ex.git'
+        EMAIL_TO = 'aieshah9241@gmail.com, 203ajmk@gmail.com'
         // Change Detection Flags
         // INGESTION_CHANGED = 'false'
         // DASHBOARD_CHANGED = 'false'
@@ -67,7 +67,7 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('', 'DockerHubCred') {
-                        def img = docker.build("${DOCKER_USER_NAME}/microservices-ingestion", "-f microservices/ingestion/Dockerfile microservices")
+                        def img = docker.build("${DOCKER_HUB_USR}/microservices-ingestion", "-f microservices/ingestion/Dockerfile microservices")
                         img.push('latest')
                     }
                 }
@@ -79,7 +79,7 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('', 'DockerHubCred') {
-                        def img = docker.build("${DOCKER_USER_NAME}/microservices-dashboard", "-f microservices/dashboard/Dockerfile microservices")
+                        def img = docker.build("${DOCKER_HUB_USR}/microservices-dashboard", "-f microservices/dashboard/Dockerfile microservices")
                         img.push('latest')
                     }
                 }
@@ -91,10 +91,10 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('', 'DockerHubCred') {
-                        def mlApi = docker.build("${DOCKER_USER_NAME}/microservices-ml-api", "-f microservices/ml/Dockerfile microservices")
+                        def mlApi = docker.build("${DOCKER_HUB_USR}/microservices-ml-api", "-f microservices/ml/Dockerfile microservices")
                         mlApi.push('latest')
                         
-                        def training = docker.build("${DOCKER_USER_NAME}/microservices-model-training", "-f microservices/model_training/Dockerfile microservices")
+                        def training = docker.build("${DOCKER_HUB_USR}/microservices-model-training", "-f microservices/model_training/Dockerfile microservices")
                         training.push('latest')
                     }
                 }
@@ -106,7 +106,7 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('', 'DockerHubCred') {
-                        def img = docker.build("${DOCKER_USER_NAME}/microservices-mlflow", "microservices/mlflow")
+                        def img = docker.build("${DOCKER_HUB_USR}/microservices-mlflow", "microservices/mlflow")
                         img.push('latest')
                     }
                 }
