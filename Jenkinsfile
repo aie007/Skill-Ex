@@ -15,6 +15,7 @@ pipeline {
         // ML_CHANGED = 'false'
         // MLFLOW_CHANGED = 'false'
         // ELK_CHANGED = 'false'
+        RAPIDAPI_KEY = credentials('rapidapi-key')
     }
 
     stages {
@@ -28,14 +29,11 @@ pipeline {
             steps {
                 script {
                     echo "Generating .env file from Jenkins credentials..."
-                    withCredentials([
-                        string(credentialsId: 'RAPIDAPI_KEY', variable: 'RAPID_KEY'),
-                        usernamePassword(credentialsId: 'AWS_CREDENTIALS', passwordVariable: 'AWS_SECRET', usernameVariable: 'AWS_ID')
-                    ]) {
+                    withAWS(credentialsId: 'b9b4f570-ae9e-4ba8-890d-216c5d94eca6') {
                         sh """
-                        echo "AWS_ACCESS_KEY_ID=${AWS_ID}" > microservices/.env
-                        echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET}" >> microservices/.env
-                        echo "RAPIDAPI_KEY=${RAPID_KEY}" >> microservices/.env
+                        echo "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}" > microservices/.env
+                        echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}" >> microservices/.env
+                        echo "RAPIDAPI_KEY=${RAPIDAPI_KEY}" >> microservices/.env
                         echo "AWS_RAW_BUCKET=amzn-s3-raw-bucket-skillex" >> microservices/.env
                         echo "AWS_PROCESSED_BUCKET=amzn-s3-processed-bucket-skillex" >> microservices/.env
                         echo "AWS_MODELS_BUCKET=amzn-s3-models-bucket" >> microservices/.env
