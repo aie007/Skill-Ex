@@ -6,9 +6,9 @@ pipeline {
     }
 
     environment {
-        DOCKER_USER_NAME = 'anujajose'
-        GITHUB_REPO_URL = 'https://github.com/anuja-jmk/Skill-Ex.git'
-        EMAIL_TO = 'anuja2033@gmail.com'
+        DOCKER_USER_NAME = 'aie007'
+        GITHUB_REPO_URL = 'https://github.com/aie007/Skill-Ex.git'
+        EMAIL_TO = 'aieshah9241@gmail.com'
         // Change Detection Flags
         // INGESTION_CHANGED = 'false'
         // DASHBOARD_CHANGED = 'false'
@@ -90,7 +90,7 @@ pipeline {
             when { expression { env.ML_CHANGED == 'true' } }
             steps {
                 script {
-                    docker.withRegistry('', 'DockerCred') {
+                    docker.withRegistry('', 'DockerHubCred') {
                         def mlApi = docker.build("${DOCKER_USER_NAME}/microservices-ml-api", "-f microservices/ml/Dockerfile microservices")
                         mlApi.push('latest')
                         
@@ -105,7 +105,7 @@ pipeline {
             when { expression { env.MLFLOW_CHANGED == 'true' } }
             steps {
                 script {
-                    docker.withRegistry('', 'DockerCred') {
+                    docker.withRegistry('', 'DockerHubCred') {
                         def img = docker.build("${DOCKER_USER_NAME}/microservices-mlflow", "microservices/mlflow")
                         img.push('latest')
                     }
@@ -116,10 +116,7 @@ pipeline {
         stage('Run Ansible Deployment') {
             steps {
                 script {
-                    // Ansible Vault removed as requested
-                    withCredentials([
-                        usernamePassword(credentialsId: 'AWS_CREDENTIALS', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')
-                    ]) {
+                    withAWS(credentialsId: 'b9b4f570-ae9e-4ba8-890d-216c5d94eca6') {
                         ansiblePlaybook(
                             playbook: 'ansible/deploy.yml',
                             inventory: 'ansible/inventory.ini',
