@@ -18,6 +18,7 @@ pipeline {
         // MLFLOW_CHANGED = 'false'
         // ELK_CHANGED = 'false'
         RAPIDAPI_KEY = credentials('rapidapi-key')
+        ANSIBLE_ROLES_PATH = "${WORKSPACE}/ansible/roles"
     }
 
     stages {
