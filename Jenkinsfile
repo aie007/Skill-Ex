@@ -21,6 +21,13 @@ pipeline {
     }
 
     stages {
+        stage('Clean Workspace') {
+            steps {
+                // Deletes the workspace directory before the build starts
+                cleanWs()
+            }
+        }
+
         stage('Checkout') {
             steps {
                 git branch: 'main', url: "${GITHUB_REPO_URL}"

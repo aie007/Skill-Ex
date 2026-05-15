@@ -39,7 +39,7 @@
 
 - name: Remove old model-training deployment if it exists
   shell: |
-    kubectl delete deployment model-training-deployment -n {{ kube_namespace }} --ignore-not-found=true
+    kubectl delete pod model-training-deployment -n {{ kube_namespace }} --ignore-not-found=true
 
 - name: Deploy model-training cronjob
   shell: |
