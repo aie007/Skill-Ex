@@ -39,12 +39,27 @@
 
 - name: Remove old model-training deployment if it exists
   shell: |
-    kubectl delete pod model-training-deployment -n {{ kube_namespace }} --ignore-not-found=true
+    kubectl delete deployment model-training-deployment -n {{ kube_namespace }} --ignore-not-found=true
 
-- name: Deploy model-training cronjob
+- name: Delete existing model-training cronjob
+  shell: |
+    unset http_proxy; unset https_proxy; unset no_proxy;
+    kubectl delete cronjob model-training-cronjob -n {{ kube_namespace }} --ignore-not-found=true
+
+- name: Delete existing ingestion cronjob
+  shell: |
+    unset http_proxy; unset https_proxy; unset no_proxy;
+    kubectl delete cronjob ingestion-cronjob -n {{ kube_namespace }} --ignore-not-found=true
+
+- name: Apply model-training cronjob
   shell: |
     unset http_proxy; unset https_proxy; unset no_proxy;
     kubectl apply -f ../k8s/model-training/cronjob.yml -n {{ kube_namespace }}
+
+- name: Apply ingestion cronjob
+  shell: |
+    unset http_proxy; unset https_proxy; unset no_proxy;
+    kubectl apply -f ../k8s/ingestion/cronjob.yml -n {{ kube_namespace }}
 
 - name: Deploy dashboard
   shell: |
