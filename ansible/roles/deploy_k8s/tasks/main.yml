@@ -46,11 +46,6 @@
     unset http_proxy; unset https_proxy; unset no_proxy;
     kubectl apply -f ../k8s/model-training/cronjob.yml -n {{ kube_namespace }}
 
-# - name: Deploy model-training
-#   shell: |
-#     unset http_proxy; unset https_proxy; unset no_proxy;
-#     kubectl apply -f ../k8s/model-training/deployment.yml -n {{ kube_namespace }} 
-
 - name: Deploy dashboard
   shell: |
     unset http_proxy; unset https_proxy; unset no_proxy;
