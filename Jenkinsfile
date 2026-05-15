@@ -31,14 +31,14 @@ pipeline {
                     echo "Generating .env file from Jenkins credentials..."
                     withAWS(credentialsId: 'b9b4f570-ae9e-4ba8-890d-216c5d94eca6') {
                         sh """
-                        echo "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}" > microservices/.env
-                        echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}" >> microservices/.env
-                        echo "RAPIDAPI_KEY=${RAPIDAPI_KEY}" >> microservices/.env
-                        echo "AWS_RAW_BUCKET=amzn-s3-raw-bucket-skillex" >> microservices/.env
-                        echo "AWS_PROCESSED_BUCKET=amzn-s3-processed-bucket-skillex" >> microservices/.env
-                        echo "AWS_MODELS_BUCKET=amzn-s3-models-bucket" >> microservices/.env
-                        echo "PYTHONUNBUFFERED=1" >> microservices/.env
-                        echo "APP_ENV=production" >> microservices/.env
+                        echo 'AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}' > microservices/.env
+                        echo 'AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}' >> microservices/.env
+                        echo 'RAPIDAPI_KEY=${RAPIDAPI_KEY}' >> microservices/.env
+                        echo 'AWS_RAW_BUCKET=amzn-s3-raw-bucket-skillex' >> microservices/.env
+                        echo 'AWS_PROCESSED_BUCKET=amzn-s3-processed-bucket-skillex' >> microservices/.env
+                        echo 'AWS_MODELS_BUCKET=amzn-s3-models-bucket' >> microservices/.env
+                        echo 'PYTHONUNBUFFERED=1' >> microservices/.env
+                        echo 'APP_ENV=production' >> microservices/.env
                         """
                     }
                 }
