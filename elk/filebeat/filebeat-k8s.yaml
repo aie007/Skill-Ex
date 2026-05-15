@@ -20,6 +20,11 @@ spec:
       - name: filebeat
         image: docker.elastic.co/beats/filebeat:7.17.3
         args: ["-c", "/etc/filebeat.yml", "-e"]
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
         securityContext:
           runAsUser: 0
         resources:

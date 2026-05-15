@@ -22,7 +22,11 @@ data:
 
     processors:
       - add_kubernetes_metadata:
+          host: ${NODE_NAME}
           in_cluster: true
+          matchers:
+          - logs_path:
+              logs_path: "/var/log/containers/"
 
       - drop_event:
           when:
