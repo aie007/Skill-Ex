@@ -7,7 +7,7 @@ pipeline {
 
     environment {
         DOCKER_HUB = credentials('DockerHubCred')
-        GITHUB_REPO_URL = 'https://github.com/anuja-jmk/Skill-Ex.git'
+        GITHUB_REPO_URL = 'https://github.com/aie007/Skill-Ex.git'
         EMAIL_TO = 'aieshah9241@gmail.com, 203ajmk@gmail.com'
         KUBECONFIG = "/var/lib/jenkins/kube-minikube/config"
         MINIKUBE_HOME = "/var/lib/jenkins/kube-minikube/.minikube"
