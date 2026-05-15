@@ -15,4 +15,4 @@ spec:
     spec:
       containers:
         - name: model-training
-          image: aie007/microservices-model-training:latest
+          image: anujajose/microservices-model-training:latest
