@@ -15,6 +15,6 @@ spec:
     spec:
       containers:
         - name: ml-api
-          image: anujajose/microservices-ml-api:latest
+          image: aie007/microservices-ml-api:latest
           ports:
             - containerPort: 8000

@@ -6,15 +6,16 @@ pipeline {
     }
 
     environment {
-        DOCKER_USER_NAME = 'anujajose'
-        GITHUB_REPO_URL = 'https://github.com/anuja-jmk/Skill-Ex.git'
-        EMAIL_TO = 'anuja2033@gmail.com'
+        DOCKER_USER_NAME = 'aie007'
+        GITHUB_REPO_URL = 'https://github.com/aie007/Skill-Ex.git'
+        EMAIL_TO = 'aieshah9241@gmail.com'
         // Change Detection Flags
-        INGESTION_CHANGED = 'false'
-        DASHBOARD_CHANGED = 'false'
-        ML_CHANGED = 'false'
-        MLFLOW_CHANGED = 'false'
-        ELK_CHANGED = 'false'
+        // INGESTION_CHANGED = 'false'
+        // DASHBOARD_CHANGED = 'false'
+        // ML_CHANGED = 'false'
+        // MLFLOW_CHANGED = 'false'
+        // ELK_CHANGED = 'false'
+        RAPIDAPI_KEY = credentials('rapidapi-key')
     }
 
     stages {
@@ -24,27 +25,39 @@ pipeline {
             }
         }
 
-        stage('Detect Changes') {
+        stage('Generate .env') {
             steps {
                 script {
-                    def commits = sh(script: "git rev-list HEAD --count", returnStdout: true).trim().toInteger()
-
-                    if (commits < 2) {
-                        echo "First commit or fresh repo detected. Forcing all builds."
-                        env.INGESTION_CHANGED = 'true'
-                        env.DASHBOARD_CHANGED = 'true'
-                        env.ML_CHANGED = 'true'
-                        env.MLFLOW_CHANGED = 'true'
-                        env.ELK_CHANGED = 'true'
-                    } else {
-                        def changeLog = sh(script: "git diff --name-only HEAD~1 HEAD", returnStdout: true).trim().split("\n")
-                        
-                        env.INGESTION_CHANGED = changeLog.any { it.startsWith("microservices/ingestion/") || it.startsWith("microservices/shared/") }.toString()
-                        env.DASHBOARD_CHANGED = changeLog.any { it.startsWith("microservices/dashboard/") || it.startsWith("microservices/shared/") }.toString()
-                        env.ML_CHANGED = changeLog.any { it.startsWith("microservices/ml/") || it.startsWith("microservices/model_training/") || it.startsWith("microservices/shared/") }.toString()
-                        env.MLFLOW_CHANGED = changeLog.any { it.startsWith("microservices/mlflow/") }.toString()
-                        env.ELK_CHANGED = changeLog.any { it.startsWith("elk/") }.toString()
+                    echo "Generating .env file from Jenkins credentials..."
+                    withAWS(credentialsId: 'b9b4f570-ae9e-4ba8-890d-216c5d94eca6') {
+                        sh '''
+                        echo "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}" > microservices/.env
+                        echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}" >> microservices/.env
+                        echo "RAPIDAPI_KEY=${RAPIDAPI_KEY}" >> microservices/.env
+                        echo "AWS_RAW_BUCKET=amzn-s3-raw-bucket-skillex" >> microservices/.env
+                        echo "AWS_PROCESSED_BUCKET=amzn-s3-processed-bucket-skillex" >> microservices/.env
+                        echo "AWS_MODELS_BUCKET=amzn-s3-models-bucket" >> microservices/.env
+                        echo "PYTHONUNBUFFERED=1" >> microservices/.env
+                        echo "APP_ENV=production" >> microservices/.env
+                        '''
                     }
+                }
+            }
+        }
+
+      stage('Detect Changes') {
+            steps {
+                script {
+                    echo "Forcing all builds to run regardless of changes."
+                    
+                    env.INGESTION_CHANGED = 'true'
+                    env.DASHBOARD_CHANGED = 'true'
+                    env.ML_CHANGED = 'true'
+                    env.MLFLOW_CHANGED = 'true'
+                    env.ELK_CHANGED = 'true'
+                    
+                    // Optional: Print to console to verify
+                    echo "Flags set: Ingestion=${env.INGESTION_CHANGED}, Dashboard=${env.DASHBOARD_CHANGED}, ML=${env.ML_CHANGED}"
                 }
             }
         }
@@ -53,7 +66,7 @@ pipeline {
             when { expression { env.INGESTION_CHANGED == 'true' } }
             steps {
                 script {
-                    docker.withRegistry('', 'DockerCred') {
+                    docker.withRegistry('', 'DockerHubCred') {
                         def img = docker.build("${DOCKER_USER_NAME}/microservices-ingestion", "-f microservices/ingestion/Dockerfile microservices")
                         img.push('latest')
                     }
@@ -61,23 +74,23 @@ pipeline {
             }
         }
 
-        // stage('Build & Push Dashboard') {
-        //     when { expression { env.DASHBOARD_CHANGED == 'true' } }
-        //     steps {
-        //         script {
-        //             docker.withRegistry('', 'DockerCred') {
-        //                 def img = docker.build("${DOCKER_USER_NAME}/microservices-dashboard", "-f microservices/dashboard/Dockerfile microservices")
-        //                 img.push('latest')
-        //             }
-        //         }
-        //     }
-        // }
+        stage('Build & Push Dashboard') {
+            when { expression { env.DASHBOARD_CHANGED == 'true' } }
+            steps {
+                script {
+                    docker.withRegistry('', 'DockerHubCred') {
+                        def img = docker.build("${DOCKER_USER_NAME}/microservices-dashboard", "-f microservices/dashboard/Dockerfile microservices")
+                        img.push('latest')
+                    }
+                }
+            }
+        }
 
         stage('Build & Push ML Services') {
             when { expression { env.ML_CHANGED == 'true' } }
             steps {
                 script {
-                    docker.withRegistry('', 'DockerCred') {
+                    docker.withRegistry('', 'DockerHubCred') {
                         def mlApi = docker.build("${DOCKER_USER_NAME}/microservices-ml-api", "-f microservices/ml/Dockerfile microservices")
                         mlApi.push('latest')
                         
@@ -92,8 +105,7 @@ pipeline {
             when { expression { env.MLFLOW_CHANGED == 'true' } }
             steps {
                 script {
-                    docker.withRegistry('', 'DockerCred') {
-                        // Custom MLflow build from the mlflow subfolder
+                    docker.withRegistry('', 'DockerHubCred') {
                         def img = docker.build("${DOCKER_USER_NAME}/microservices-mlflow", "microservices/mlflow")
                         img.push('latest')
                     }
@@ -101,27 +113,16 @@ pipeline {
             }
         }
 
-        stage('Deploy ELK Stack') {
-            when { expression { env.ELK_CHANGED == 'true' } }
-            steps {
-                build job: 'elk-deployment', wait: false
-            }
-        }
-
         stage('Run Ansible Deployment') {
             steps {
                 script {
-                    withCredentials([
-                        usernamePassword(credentialsId: 'AWS_CREDENTIALS', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID'),
-                        string(credentialsId: 'AnsibleVaultCred', variable: 'VAULT_PASS')
-                    ]) {
+                    withAWS(credentialsId: 'b9b4f570-ae9e-4ba8-890d-216c5d94eca6') {
                         ansiblePlaybook(
                             playbook: 'ansible/deploy.yml',
-                            inventory: 'ansible/inventory',
-                            vaultCredentialsId: 'AnsibleVaultCred',
+                            inventory: 'ansible/inventory.ini',
                             extraVars: [
-                                aws_access_key: "${AWS_ACCESS_KEY_ID}",
-                                aws_secret_key: "${AWS_SECRET_ACCESS_KEY}"
+                                aws_access_key: '${AWS_ACCESS_KEY_ID}',
+                                aws_secret_key: '${AWS_SECRET_ACCESS_KEY}'
                             ]
                         )
                     }
@@ -132,12 +133,12 @@ pipeline {
 
     post {
         success {
-            mail to: "${EMAIL_TO},203ajmk@gmail.com,aieshah.nasir@iiitb.ac.in",
+            mail to: "${EMAIL_TO},203ajmk@gmail.com",
                  subject: "SUCCESS: Skill-Ex Build '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
                  body: "Great news! The Skill-Ex microservices were successfully built and deployed.\n\nBuild URL: ${env.BUILD_URL}"
         }
         failure {
-            mail to: "${EMAIL_TO},203ajmk@gmail.com,aieshah.nasir@iiitb.ac.in",
+            mail to: "${EMAIL_TO},203ajmk@gmail.com",
                  subject: "FAILURE: Skill-Ex Build '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
                  body: "Attention: The Skill-Ex build failed. Please check the logs immediately.\n\nBuild URL: ${env.BUILD_URL}"
         }

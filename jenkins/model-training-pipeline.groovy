@@ -2,13 +2,13 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'anujajose/microservices-model-training'
+        IMAGE_NAME = 'aie007/microservices-model-training'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/anuja-jmk/Skill-Ex.git'
+                git 'https://github.com/aie007/Skill-Ex.git'
             }
         }
 

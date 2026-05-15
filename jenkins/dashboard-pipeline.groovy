@@ -2,14 +2,14 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'anujajose/microservices-dashboard'
+        IMAGE_NAME = 'aie007/microservices-dashboard'
         KUBECONFIG = '/var/lib/jenkins/.kube/config'   
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/anuja-jmk/Skill-Ex.git'
+                git 'https://github.com/aie007/Skill-Ex.git'
             }
         }
 

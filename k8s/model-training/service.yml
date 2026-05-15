@@ -6,8 +6,3 @@ metadata:
 spec:
   selector:
     app: model-training
-  ports:
-    - protocol: TCP
-      port: ?
-      targetPort: ?
-  type: NodePort

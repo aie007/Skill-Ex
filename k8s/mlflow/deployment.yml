@@ -15,6 +15,6 @@ spec:
     spec:
       containers:
         - name: mlflow
-          image: anujajose/microservices-mlflow:latest
+          image: aie007/microservices-mlflow:latest
           ports:
             - containerPort: 5000
