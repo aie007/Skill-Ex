@@ -26,6 +26,7 @@ pipeline {
             steps {
                 // Deletes the workspace directory before the build starts
                 cleanWs()
+                checkout scm
             }
         }
 
