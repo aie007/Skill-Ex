@@ -21,6 +21,10 @@ spec:
           env:
             - name: ELASTICSEARCH_HOSTS
               value: "http://elasticsearch:9200"
+            - name: server.port
+              value: "5601"
+            - name: server.host
+              value: "0.0.0.0"
 ---
 apiVersion: v1
 kind: Service
