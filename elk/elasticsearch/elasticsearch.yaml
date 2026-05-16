@@ -27,6 +27,8 @@ spec:
             memory: "1Gi"
           requests:
             memory: "512Mi"
+        network:
+          host: 0.0.0.0
 ---
 apiVersion: v1
 kind: Service
