@@ -13,9 +13,9 @@ try:
     from shared.data.ingestion.s3_storage import S3StorageProvider
     from shared.config.settings import settings
 except ImportError as e:
-    print(f"Import Error: {e}")
-    print(f"PYTHONPATH: {os.environ.get('PYTHONPATH')}")
-    print(f"sys.path: {sys.path}")
+    print(f"ERROR: Import Error: {e}")
+    print(f"INFO: PYTHONPATH: {os.environ.get('PYTHONPATH')}")
+    print(f"INFO: sys.path: {sys.path}")
     sys.exit(1)
 
 def run_training():
@@ -25,7 +25,7 @@ def run_training():
     - Logs metrics/parameters to MLflow.
     - Pushes the resulting model artifact to the S3 Model Registry (amzn-s3-models-bucket).
     """
-    print("--- Model Training Service: Pipeline Started ---")
+    print("INFO: --- Model Training Service: Pipeline Started ---")
     
     try:
         # 1. Initialize Repository & Sync Data
@@ -42,9 +42,9 @@ def run_training():
             is_empty = True
 
         if not os.path.exists(db_path) or is_empty:
-            print("Database missing or empty. Attempting to restore from S3 Model Registry...")
+            print("INFO: Database missing or empty. Attempting to restore from S3 Model Registry...")
             if not pipeline.restore_db_from_s3():
-                print("No DB backup found. Rebuilding from raw JSON logs...")
+                print("WARNING: No DB backup found. Rebuilding from raw JSON logs...")
                 pipeline.sync_from_s3()
 
         artifact_name = "model_artifacts.pkl"
@@ -64,7 +64,7 @@ def run_training():
             latest_key = "models/latest_recommender.pkl"
             
             # --- Always Archive ---
-            print(f"Archiving versioned model: {remote_key}")
+            print(f"INFO: Archiving versioned model: {remote_key}")
             storage.backup_file(bucket, artifact_name, remote_key)
             
             # --- Conditional Promotion ---
@@ -73,20 +73,20 @@ def run_training():
             threshold = getattr(settings.ml, 'skill_extraction_threshold', 0.5) if hasattr(settings, 'ml') else 0.5
             
             if performance_score >= threshold:
-                print(f"Promotion Approved: Score {performance_score:.4f} >= Threshold {threshold}")
-                print(f"Updating latest model pointer: {latest_key}")
+                print(f"INFO: Promotion Approved: Score {performance_score:.4f} >= Threshold {threshold}")
+                print(f"INFO: Updating latest model pointer: {latest_key}")
                 storage.backup_file(bucket, artifact_name, latest_key)
             else:
-                print(f"Promotion Rejected: Score {performance_score:.4f} < Threshold {threshold}")
-                print("Latest model in S3 remains unchanged.")
+                print(f"WARNING: Promotion Rejected: Score {performance_score:.4f} < Threshold {threshold}")
+                print("INFO: Latest model in S3 remains unchanged.")
             
-            print("--- Model Training Service: Pipeline Completed ---")
+            print("INFO: --- Model Training Service: Pipeline Completed ---")
         else:
-            print(f"Error: Trained artifact '{artifact_name}' not found.")
+            print(f"ERROR: Trained artifact '{artifact_name}' not found.")
             sys.exit(1)
             
     except Exception as e:
-        print(f"Failure in training service: {str(e)}")
+        print(f"ERROR: Failure in training service: {str(e)}")
         sys.exit(1)
 
 if __name__ == "__main__":

@@ -13,30 +13,30 @@ class DataPipeline:
 
     def restore_db_from_s3(self):
         """Attempts to download the DB backup from S3."""
-        print("Attempting to restore DB from S3 backup...")
+        print("INFO: Attempting to restore DB from S3 backup...")
         try:
             backup_bucket = settings.aws.processed_bucket
             backup_key = "db_backups/job_market.db"
             self.storage.download_file(backup_bucket, backup_key, settings.database.name)
-            print("DB restored successfully from S3.")
+            print("INFO: DB restored successfully from S3.")
             return True
         except Exception as e:
-            print(f"No DB backup found or failed to download: {e}")
+            print(f"WARNING: No DB backup found or failed to download: {e}")
             return False
 
     def sync_from_s3(self):
         """Fetches all raw JSONs from S3, processes them, and saves to DB."""
-        print("Starting sync from S3...")
+        print("INFO: Starting sync from S3...")
         try:
             raw_bucket = settings.aws.raw_bucket
             keys = self.storage.list_objects(raw_bucket, prefix="raw/")
             
             if not keys:
-                print("No raw data found in S3.")
+                print("WARNING: No raw data found in S3.")
                 return
 
             for key in keys:
-                print(f"Processing {key}...")
+                print(f"INFO: Processing {key}...")
                 raw_data = self.storage.fetch_json(raw_bucket, key)
                 
                 # The structure might vary, but original code looked for 'data' key
@@ -61,7 +61,7 @@ class DataPipeline:
                     })
                 
                 self.repo.save_jobs(processed)
-            print("Sync complete.")
+            print("INFO: Sync complete.")
         except Exception as e:
-            print(f"Failed to sync from S3: {e}")
+            print(f"ERROR: Failed to sync from S3: {e}")
 

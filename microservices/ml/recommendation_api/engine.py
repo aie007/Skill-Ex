@@ -28,7 +28,7 @@ class JobRecommender(IRecommender):
         with mlflow.start_run(run_name="Job_Recommender_Training"):
             df = self.repository.get_all_jobs()
             if df.empty:
-                print("No data found for training.")
+                print("WARNING: No data found for training.")
                 return
 
             self.full_df = df
@@ -49,7 +49,7 @@ class JobRecommender(IRecommender):
                 pickle.dump((self.matrix, self.job_ids, self.vectorizer), f)
             mlflow.log_artifact(self.artifact_path)
             
-            print(f"Training complete. Avg Sim: {avg_sim:.4f}")
+            print(f"INFO: Training complete. Avg Sim: {avg_sim:.4f}")
             return float(avg_sim)
         
         return 0.0
@@ -62,12 +62,12 @@ class JobRecommender(IRecommender):
             bucket = settings.aws.models_bucket
             latest_key = "models/latest_recommender.pkl"
             
-            print(f"Checking for latest model in S3 registry: {bucket}/{latest_key}")
+            print(f"INFO: Checking for latest model in S3 registry: {bucket}/{latest_key}")
             storage.download_file(bucket, latest_key, self.artifact_path)
-            print("Successfully downloaded latest model from S3.")
+            print("INFO: Successfully downloaded latest model from S3.")
             return self.load_artifacts()
         except Exception as e:
-            print(f"Could not sync model from S3: {str(e)}")
+            print(f"WARNING: Could not sync model from S3: {str(e)}")
             return False
 
     def load_artifacts(self):
