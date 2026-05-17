@@ -9,6 +9,11 @@ data:
     - type: container
       paths:
         - /var/log/containers/*.log
+
+
+
+      exclude_files: ['-elasticsearch-', '-kibana-', '-logstash-', '-filebeat-']
+      
       multiline.pattern: '^\['
       multiline.negate: true
       multiline.match: after
