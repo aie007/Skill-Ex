@@ -31,6 +31,21 @@ data:
       - drop_event:
           when:
             not:
+              or:
+                - equals:
+                    kubernetes.container.name: "dashboard"
+                - equals:
+                    kubernetes.container.name: "ml-api"
+                - equals:
+                    kubernetes.container.name: "mlflow"
+                - equals:
+                    kubernetes.container.name: "model-training"
+                - equals:
+                    kubernetes.container.name: "ingestion"
+
+      - drop_event:
+          when:
+            not:
               equals:
                 kubernetes.namespace: "skill-ex-demo"
 
