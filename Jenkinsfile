@@ -29,8 +29,8 @@ pipeline {
     stages {
         stage('Clean Workspace & Checkout SCM') {
             steps {
-                sh 'git clean -fdx'
-                sh 'git reset --hard HEAD'
+                // sh 'git clean -fdx'
+                // sh 'git reset --hard HEAD'
                 // Deletes the workspace directory before the build starts
                 cleanWs()
                 checkout scm
