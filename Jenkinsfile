@@ -11,7 +11,7 @@ pipeline {
         EMAIL_TO = 'aieshah9241@gmail.com, 203ajmk@gmail.com'
         KUBECONFIG = "/var/lib/jenkins/kube-minikube/config"
         MINIKUBE_HOME = "/var/lib/jenkins/kube-minikube/.minikube"
-        // Change Detection Flags
+                // Change Detection Flags
         // INGESTION_CHANGED = 'false'
         // DASHBOARD_CHANGED = 'false'
         // ML_CHANGED = 'false'
@@ -53,30 +53,6 @@ pipeline {
             }
         }
 
-        stage('Run Unit Tests') {
-            parallel {
-                stage('Test Dashboard') {
-                    when { expression { env.DASHBOARD_CHANGED == 'true' } }
-                    steps {
-                        script {
-                            dir('microservices/dashboard') {
-                                sh '''
-                                    pwd
-                                    python3 -m venv venv
-                                    . venv/bin/activate
-                                    pip install -r requirements.txt
-                                    pip install pytest pytest-mock
-                                    pytest --junitxml=dashboard-results.xml
-                                '''
-                            }
-                        }
-                    }
-                }
-                // stage('Test PII Masker') {
-                //     when { expression { env.}}
-                // }
-            }
-        }
 
         stage('Build & Push Ingestion') {
             when { expression { env.INGESTION_CHANGED == 'true' } }
@@ -90,27 +66,55 @@ pipeline {
             }
         }
 
-        stage('Build & Push Dashboard') {
+        stage('Build, Test & Push Dashboard') {
             when { expression { env.DASHBOARD_CHANGED == 'true' } }
             steps {
                 script {
+                    def img
                     docker.withRegistry('', 'DockerHubCred') {
-                        def img = docker.build("${DOCKER_HUB_USR}/microservices-dashboard", "-f microservices/dashboard/Dockerfile microservices")
+                        img = docker.build("${DOCKER_HUB_USR}/microservices-dashboard", "-f microservices/dashboard/Dockerfile microservices")
+                    }
+                    
+                    // FIX: Added '-u 0:0' to execute inside the container as root
+                    img.inside('-u 0:0') {
+                        sh '''
+                            cd microservices/dashboard
+                            pip install pytest pytest-mock
+                            pytest test_app.py --junitxml=dashboard-results.xml
+                        '''
+                    }
+                    
+                    // Push built image only if tests pass
+                    docker.withRegistry('', 'DockerHubCred') {
                         img.push('latest')
                     }
                 }
             }
         }
 
-        stage('Build & Push ML Services') {
+        stage('Build, Test & Push ML Services') {
             when { expression { env.ML_CHANGED == 'true' } }
             steps {
                 script {
+                    def mlApi
+                    def training
                     docker.withRegistry('', 'DockerHubCred') {
-                        def mlApi = docker.build("${DOCKER_HUB_USR}/microservices-ml-api", "-f microservices/ml/Dockerfile microservices")
+                        mlApi = docker.build("${DOCKER_HUB_USR}/microservices-ml-api", "-f microservices/ml/Dockerfile microservices")
+                        training = docker.build("${DOCKER_HUB_USR}/microservices-model-training", "-f microservices/model_training/Dockerfile microservices")
+                    }
+                    
+                    // FIX: Added '-u 0:0' to execute inside the container as root
+                    mlApi.inside('-u 0:0') {
+                        sh '''
+                            cd microservices
+                            pip install pytest
+                            pytest tests/test_pii_masker.py --junitxml=ml-api-results.xml
+                        '''
+                    }
+                    
+                    // Push stable images only if tests pass
+                    docker.withRegistry('', 'DockerHubCred') {
                         mlApi.push('latest')
-                        
-                        def training = docker.build("${DOCKER_HUB_USR}/microservices-model-training", "-f microservices/model_training/Dockerfile microservices")
                         training.push('latest')
                     }
                 }
@@ -131,19 +135,6 @@ pipeline {
 
         stage('Run Ansible Deployment') {
             steps {
-                // script {
-                //     withCredentials([aws(credentialsId: 'b9b4f570-ae9e-4ba8-890d-216c5d94eca6', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                //         ansiblePlaybook(
-                //             playbook: 'ansible/deploy.yml',
-                //             inventory: 'ansible/inventory.ini',
-                //             extraVars: [
-                //                 aws_access_key: '${AWS_ACCESS_KEY_ID}',
-                //                 aws_secret_key: '${AWS_SECRET_ACCESS_KEY}',
-                //                 rapidapi_key:   '${RAPIDAPI_KEY}'
-                //             ]
-                //         )
-                //     }
-                // }
                 echo 'Triggering Ansible Playbook with Vault Decryption...'
         
                 // Pull the vault password securely from Jenkins Credentials
