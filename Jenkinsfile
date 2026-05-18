@@ -37,7 +37,7 @@ pipeline {
             }
         }
 
-      stage('Detect Changes') {
+        stage('Detect Changes') {
             steps {
                 script {
                     echo "Forcing all builds to run regardless of changes."
@@ -59,8 +59,8 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('', 'DockerHubCred') {
-                        def img = docker.build("${DOCKER_HUB_USR}/microservices-ingestion", "-f microservices/ingestion/Dockerfile microservices")
-                        img.push('latest')
+                        def img = docker.build("${DOCKER_HUB_USR}/microservices-ingestion:latest", "-f microservices/ingestion/Dockerfile microservices")
+                        img.push()
                     }
                 }
             }
@@ -126,8 +126,8 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('', 'DockerHubCred') {
-                        def img = docker.build("${DOCKER_HUB_USR}/microservices-mlflow", "microservices/mlflow")
-                        img.push('latest')
+                        def img = docker.build("${DOCKER_HUB_USR}/microservices-mlflow:latest", "microservices/mlflow")
+                        img.push()
                     }
                 }
             }
