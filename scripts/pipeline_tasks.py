@@ -17,7 +17,7 @@ def fetch_and_sync():
 
 def train():
     """Triggers the Model Training Microservice."""
-    run_task(["python", "microservices/model_training/train.py"])
+    run_task(["python", "microservices/model_training/main.py"])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Skill-Ex Orchestrator")
