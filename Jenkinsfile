@@ -11,6 +11,12 @@ pipeline {
         EMAIL_TO = 'aieshah9241@gmail.com, 203ajmk@gmail.com'
         KUBECONFIG = "/var/lib/jenkins/kube-minikube/config"
         MINIKUBE_HOME = "/var/lib/jenkins/kube-minikube/.minikube"
+                // Change Detection Flags
+        // INGESTION_CHANGED = 'false'
+        // DASHBOARD_CHANGED = 'false'
+        // ML_CHANGED = 'false'
+        // MLFLOW_CHANGED = 'false'
+        // ELK_CHANGED = 'false'
         RAPIDAPI_KEY = credentials('rapidapi-key')
         ANSIBLE_ROLES_PATH = "${WORKSPACE}/ansible/roles"
     }
@@ -23,8 +29,8 @@ pipeline {
     stages {
         stage('Clean Workspace & Checkout SCM') {
             steps {
-                sh 'git clean -fdx'
-                sh 'git reset --hard HEAD'
+                // sh 'git clean -fdx'
+                // sh 'git reset --hard HEAD'
                 // Deletes the workspace directory before the build starts
                 cleanWs()
                 checkout scm
@@ -47,6 +53,7 @@ pipeline {
             }
         }
 
+
         stage('Build & Push Ingestion') {
             when { expression { env.INGESTION_CHANGED == 'true' } }
             steps {
@@ -63,22 +70,23 @@ pipeline {
             when { expression { env.DASHBOARD_CHANGED == 'true' } }
             steps {
                 script {
-                    // 1. Build the dashboard image
+                    def img
                     docker.withRegistry('', 'DockerHubCred') {
-                        docker.build("${DOCKER_HUB_USR}/microservices-dashboard:latest", "-f microservices/dashboard/Dockerfile microservices")
+                        img = docker.build("${DOCKER_HUB_USR}/microservices-dashboard", "-f microservices/dashboard/Dockerfile microservices")
                     }
                     
-                    // 2. Run unit tests in an isolated, temporary container shell
-                    // Using --rm guarantees the container system clears itself automatically upon exit
-                    sh """
-                        echo "Running dashboard unit tests inside separate test container..."
-                        docker run --rm ${DOCKER_HUB_USR}/microservices-dashboard:latest \
-                        sh -c "cd microservices/dashboard && pip install pytest pytest-mock && pytest test_app.py"
-                    """
+                    // FIX: Added '-u 0:0' to execute inside the container as root
+                    img.inside('-u 0:0') {
+                        sh '''
+                            cd microservices/dashboard
+                            pip install pytest pytest-mock
+                            pytest test_app.py --junitxml=dashboard-results.xml
+                        '''
+                    }
                     
-                    // 3. Push to registry (only reached if the docker run command returns exit code 0)
+                    // Push built image only if tests pass
                     docker.withRegistry('', 'DockerHubCred') {
-                        sh "docker push ${DOCKER_HUB_USR}/microservices-dashboard:latest"
+                        img.push('latest')
                     }
                 }
             }
@@ -88,23 +96,26 @@ pipeline {
             when { expression { env.ML_CHANGED == 'true' } }
             steps {
                 script {
-                    // 1. Build the ML images
+                    def mlApi
+                    def training
                     docker.withRegistry('', 'DockerHubCred') {
-                        docker.build("${DOCKER_HUB_USR}/microservices-ml-api:latest", "-f microservices/ml/Dockerfile microservices")
-                        docker.build("${DOCKER_HUB_USR}/microservices-model-training:latest", "-f microservices/model_training/Dockerfile microservices")
+                        mlApi = docker.build("${DOCKER_HUB_USR}/microservices-ml-api", "-f microservices/ml/Dockerfile microservices")
+                        training = docker.build("${DOCKER_HUB_USR}/microservices-model-training", "-f microservices/model_training/Dockerfile microservices")
                     }
                     
-                    // 2. Run PII Masker unit tests inside the isolated ML API container
-                    sh """
-                        echo "Running ML API unit tests inside separate test container..."
-                        docker run --rm ${DOCKER_HUB_USR}/microservices-ml-api:latest \
-                        sh -c "cd microservices && pip install pytest && pytest tests/test_pii_masker.py"
-                    """
+                    // FIX: Added '-u 0:0' to execute inside the container as root
+                    mlApi.inside('-u 0:0') {
+                        sh '''
+                            cd microservices
+                            pip install pytest
+                            pytest tests/test_pii_masker.py --junitxml=ml-api-results.xml
+                        '''
+                    }
                     
-                    // 3. Push both stable images if tests pass
+                    // Push stable images only if tests pass
                     docker.withRegistry('', 'DockerHubCred') {
-                        sh "docker push ${DOCKER_HUB_USR}/microservices-ml-api:latest"
-                        sh "docker push ${DOCKER_HUB_USR}/microservices-model-training:latest"
+                        mlApi.push('latest')
+                        training.push('latest')
                     }
                 }
             }
