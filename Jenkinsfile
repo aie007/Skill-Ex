@@ -11,12 +11,6 @@ pipeline {
         EMAIL_TO = 'aieshah9241@gmail.com, 203ajmk@gmail.com'
         KUBECONFIG = "/var/lib/jenkins/kube-minikube/config"
         MINIKUBE_HOME = "/var/lib/jenkins/kube-minikube/.minikube"
-        // Change Detection Flags
-        // INGESTION_CHANGED = 'false'
-        // DASHBOARD_CHANGED = 'false'
-        // ML_CHANGED = 'false'
-        // MLFLOW_CHANGED = 'false'
-        // ELK_CHANGED = 'false'
         RAPIDAPI_KEY = credentials('rapidapi-key')
         ANSIBLE_ROLES_PATH = "${WORKSPACE}/ansible/roles"
     }
@@ -37,7 +31,7 @@ pipeline {
             }
         }
 
-      stage('Detect Changes') {
+        stage('Detect Changes') {
             steps {
                 script {
                     echo "Forcing all builds to run regardless of changes."
@@ -53,65 +47,64 @@ pipeline {
             }
         }
 
-        stage('Run Unit Tests') {
-            parallel {
-                stage('Test Dashboard') {
-                    when { expression { env.DASHBOARD_CHANGED == 'true' } }
-                    steps {
-                        script {
-                            dir('microservices/dashboard') {
-                                sh '''
-                                    pwd
-                                    python3 -m venv venv
-                                    . venv/bin/activate
-                                    pip install -r requirements.txt
-                                    pip install pytest pytest-mock
-                                    pytest --junitxml=dashboard-results.xml
-                                '''
-                            }
-                        }
-                    }
-                }
-                // stage('Test PII Masker') {
-                //     when { expression { env.}}
-                // }
-            }
-        }
-
         stage('Build & Push Ingestion') {
             when { expression { env.INGESTION_CHANGED == 'true' } }
             steps {
                 script {
                     docker.withRegistry('', 'DockerHubCred') {
-                        def img = docker.build("${DOCKER_HUB_USR}/microservices-ingestion", "-f microservices/ingestion/Dockerfile microservices")
-                        img.push('latest')
+                        def img = docker.build("${DOCKER_HUB_USR}/microservices-ingestion:latest", "-f microservices/ingestion/Dockerfile microservices")
+                        img.push()
                     }
                 }
             }
         }
 
-        stage('Build & Push Dashboard') {
+        stage('Build, Test & Push Dashboard') {
             when { expression { env.DASHBOARD_CHANGED == 'true' } }
             steps {
                 script {
+                    // 1. Build the dashboard image
                     docker.withRegistry('', 'DockerHubCred') {
-                        def img = docker.build("${DOCKER_HUB_USR}/microservices-dashboard", "-f microservices/dashboard/Dockerfile microservices")
-                        img.push('latest')
+                        docker.build("${DOCKER_HUB_USR}/microservices-dashboard:latest", "-f microservices/dashboard/Dockerfile microservices")
+                    }
+                    
+                    // 2. Run unit tests in an isolated, temporary container shell
+                    // Using --rm guarantees the container system clears itself automatically upon exit
+                    sh """
+                        echo "Running dashboard unit tests inside separate test container..."
+                        docker run --rm ${DOCKER_HUB_USR}/microservices-dashboard:latest \
+                        sh -c "cd microservices/dashboard && pip install pytest pytest-mock && pytest test_app.py"
+                    """
+                    
+                    // 3. Push to registry (only reached if the docker run command returns exit code 0)
+                    docker.withRegistry('', 'DockerHubCred') {
+                        sh "docker push ${DOCKER_HUB_USR}/microservices-dashboard:latest"
                     }
                 }
             }
         }
 
-        stage('Build & Push ML Services') {
+        stage('Build, Test & Push ML Services') {
             when { expression { env.ML_CHANGED == 'true' } }
             steps {
                 script {
+                    // 1. Build the ML images
                     docker.withRegistry('', 'DockerHubCred') {
-                        def mlApi = docker.build("${DOCKER_HUB_USR}/microservices-ml-api", "-f microservices/ml/Dockerfile microservices")
-                        mlApi.push('latest')
-                        
-                        def training = docker.build("${DOCKER_HUB_USR}/microservices-model-training", "-f microservices/model_training/Dockerfile microservices")
-                        training.push('latest')
+                        docker.build("${DOCKER_HUB_USR}/microservices-ml-api:latest", "-f microservices/ml/Dockerfile microservices")
+                        docker.build("${DOCKER_HUB_USR}/microservices-model-training:latest", "-f microservices/model_training/Dockerfile microservices")
+                    }
+                    
+                    // 2. Run PII Masker unit tests inside the isolated ML API container
+                    sh """
+                        echo "Running ML API unit tests inside separate test container..."
+                        docker run --rm ${DOCKER_HUB_USR}/microservices-ml-api:latest \
+                        sh -c "cd microservices && pip install pytest && pytest tests/test_pii_masker.py"
+                    """
+                    
+                    // 3. Push both stable images if tests pass
+                    docker.withRegistry('', 'DockerHubCred') {
+                        sh "docker push ${DOCKER_HUB_USR}/microservices-ml-api:latest"
+                        sh "docker push ${DOCKER_HUB_USR}/microservices-model-training:latest"
                     }
                 }
             }
@@ -122,8 +115,8 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('', 'DockerHubCred') {
-                        def img = docker.build("${DOCKER_HUB_USR}/microservices-mlflow", "microservices/mlflow")
-                        img.push('latest')
+                        def img = docker.build("${DOCKER_HUB_USR}/microservices-mlflow:latest", "microservices/mlflow")
+                        img.push()
                     }
                 }
             }
@@ -131,19 +124,6 @@ pipeline {
 
         stage('Run Ansible Deployment') {
             steps {
-                // script {
-                //     withCredentials([aws(credentialsId: 'b9b4f570-ae9e-4ba8-890d-216c5d94eca6', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                //         ansiblePlaybook(
-                //             playbook: 'ansible/deploy.yml',
-                //             inventory: 'ansible/inventory.ini',
-                //             extraVars: [
-                //                 aws_access_key: '${AWS_ACCESS_KEY_ID}',
-                //                 aws_secret_key: '${AWS_SECRET_ACCESS_KEY}',
-                //                 rapidapi_key:   '${RAPIDAPI_KEY}'
-                //             ]
-                //         )
-                //     }
-                // }
                 echo 'Triggering Ansible Playbook with Vault Decryption...'
         
                 // Pull the vault password securely from Jenkins Credentials
